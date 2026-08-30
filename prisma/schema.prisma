@@ -1,0 +1,165 @@
+// Schema do AURA — MVP de gestão financeira para casais.
+//
+// Datasource: em desenvolvimento local usamos SQLite (zero setup) via
+// DATABASE_URL="file:./dev.db". Para produção, troque `provider` para
+// "postgresql" e aponte DATABASE_URL para o Postgres real (Neon, Supabase,
+// RDS, etc.) — o schema abaixo não usa nenhum recurso exclusivo de SQLite.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String   @id @default(cuid())
+  name              String
+  email             String   @unique
+  passwordHash      String
+  avatarUrl         String?
+  monthlyIncome     Decimal  @default(0)
+  whatsappConnected Boolean  @default(false)
+  whatsappNumber    String?
+  createdAt         DateTime @default(now())
+
+  coupleId String?
+  couple   Couple? @relation(fields: [coupleId], references: [id])
+
+  sessions Session[]
+  expenses Expense[]
+
+  @@index([coupleId])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Couple {
+  id            String   @id @default(cuid())
+  inviteCode    String   @unique
+  leisureBudget Decimal  @default(0)
+  createdAt     DateTime @default(now())
+
+  users            User[]
+  expenses         Expense[]
+  fixedBills       FixedBill[]
+  debts            Debt[]
+  goals            Goal[]
+  whatsappMessages WhatsappMessage[]
+}
+
+enum ExpenseCategory {
+  alimentacao
+  transporte
+  lazer
+  compras
+  outros
+}
+
+enum ExpenseSource {
+  app
+  whatsapp
+}
+
+model Expense {
+  id          String          @id @default(cuid())
+  description String
+  amount      Decimal
+  category    ExpenseCategory
+  date        DateTime
+  source      ExpenseSource   @default(app)
+  createdAt   DateTime        @default(now())
+
+  coupleId String
+  couple   Couple @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@index([coupleId])
+  @@index([userId])
+}
+
+enum FixedBillCategory {
+  aluguel
+  agua
+  luz
+  internet
+  academia
+  assinatura
+  parcela
+  outro
+}
+
+model FixedBill {
+  id                 String            @id @default(cuid())
+  name               String
+  amount             Decimal
+  category           FixedBillCategory
+  totalInstallments  Int? // null = conta recorrente sem prazo (aluguel, luz, etc.)
+  startDate          DateTime          @default(now())
+  createdAt          DateTime          @default(now())
+
+  coupleId String
+  couple   Couple @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+
+  @@index([coupleId])
+}
+
+model Debt {
+  id             String   @id @default(cuid())
+  name           String
+  totalAmount    Decimal
+  monthlyPayment Decimal
+  startDate      DateTime @default(now())
+  createdAt      DateTime @default(now())
+
+  coupleId String
+  couple   Couple @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+
+  @@index([coupleId])
+}
+
+model Goal {
+  id           String   @id @default(cuid())
+  name         String
+  targetAmount Decimal
+  targetDate   DateTime
+  savedAmount  Decimal  @default(0)
+  createdAt    DateTime @default(now())
+
+  coupleId String
+  couple   Couple @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+
+  @@index([coupleId])
+}
+
+enum MessageDirection {
+  in
+  out
+}
+
+model WhatsappMessage {
+  id          String            @id @default(cuid())
+  direction   MessageDirection
+  text        String
+  relatedType String? // expense | fixedbill | debt | goal | query | none
+  createdAt   DateTime          @default(now())
+
+  coupleId String
+  couple   Couple @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+
+  @@index([coupleId])
+}

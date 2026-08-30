@@ -1,0 +1,34 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { db } from "@/lib/db";
+import { requireCoupleUser } from "@/lib/auth";
+
+export async function createDebtAction(formData: FormData) {
+  const user = await requireCoupleUser();
+  const name = String(formData.get("name") ?? "").trim();
+  const totalAmount = Number(formData.get("totalAmount"));
+  const monthlyPayment = Number(formData.get("monthlyPayment"));
+
+  if (!name || !Number.isFinite(totalAmount) || totalAmount <= 0 || !Number.isFinite(monthlyPayment) || monthlyPayment <= 0) {
+    return;
+  }
+
+  await db.debt.create({
+    data: { coupleId: user.coupleId!, name, totalAmount, monthlyPayment, startDate: new Date() },
+  });
+
+  revalidatePath("/app/dividas");
+  revalidatePath("/app/dashboard");
+}
+
+export async function deleteDebtAction(formData: FormData) {
+  const user = await requireCoupleUser();
+  const id = String(formData.get("id") ?? "");
+  if (!id) return;
+
+  await db.debt.deleteMany({ where: { id, coupleId: user.coupleId! } });
+
+  revalidatePath("/app/dividas");
+  revalidatePath("/app/dashboard");
+}

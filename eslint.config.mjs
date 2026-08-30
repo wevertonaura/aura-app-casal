@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // AppleDouble sidecar files (macOS writes these on exFAT/network volumes)
+    "**/._*",
   ]),
 ]);
 

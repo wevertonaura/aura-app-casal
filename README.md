@@ -1,36 +1,76 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Aura — MVP
 
-## Getting Started
+SaaS de gestão financeira para casais. O casal organiza a vida financeira junto
+e a Aura ajuda pelo WhatsApp.
 
-First, run the development server:
+## Stack
+
+Next.js 15 (App Router) · TypeScript · Tailwind CSS v4 · Prisma · SQLite (dev) / PostgreSQL (produção)
+
+## Rodando localmente
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npx prisma migrate dev   # cria o banco SQLite local e roda as migrações
+npm run db:seed          # popula um casal de demonstração
+npm run dev              # sobe em http://localhost:3100
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Login de demonstração: `ana@aura.app` / `123456` (ou `paulo@aura.app` / `123456`).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Estrutura
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `src/app` — páginas (App Router). `/` é a landing pública; `/app/*` é o
+  produto autenticado (dashboard, gastos, contas fixas, dívidas, sonhos,
+  Aura WhatsApp, configurações).
+- `src/actions` — Server Actions (auth, casal, gastos, contas fixas, dívidas,
+  sonhos, configurações, WhatsApp).
+- `src/lib` — lógica de domínio: `auth.ts` (sessão/senha), `calc.ts` (parcelas,
+  dívidas, metas), `finance.ts` (consolidação financeira do casal), `aura/`
+  (parser de mensagens, motor de resposta, cliente de WhatsApp).
+- `prisma/schema.prisma` — modelo de dados.
 
-## Learn More
+## Aura no WhatsApp — hoje é uma simulação real, não uma maquete
 
-To learn more about Next.js, take a look at the following resources:
+Não existe um chat da Aura dentro do app. A tela **Aura WhatsApp** simula o
+que aconteceria no WhatsApp de verdade: as mensagens passam por
+`src/lib/aura/parseMessage.ts` (hoje um parser por regras/palavras-chave) e
+`src/lib/aura/engine.ts`, que grava e consulta **as mesmas tabelas** usadas
+pelo resto do app. Um gasto lançado pelo simulador aparece imediatamente em
+Gastos e no Dashboard.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Para conectar de verdade:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. **WhatsApp**: implemente `src/lib/aura/whatsapp-client.ts` para chamar a
+   WhatsApp Business Cloud API (Meta) ou Twilio, usando
+   `WHATSAPP_API_TOKEN` / `WHATSAPP_PHONE_NUMBER_ID` (já previstas em
+   `.env.example`). A rota `src/app/api/whatsapp/webhook/route.ts` já está no
+   formato esperado para receber mensagens reais — hoje ela só é chamada
+   pelo simulador via Server Action.
+2. **IA**: troque a implementação de `parseAuraMessage` (em
+   `src/lib/aura/parseMessage.ts`) por uma chamada a um modelo de linguagem.
+   A assinatura da função (`texto -> intenção`) não muda, então nada mais no
+   sistema precisa ser alterado.
 
-## Deploy on Vercel
+## Trocando para PostgreSQL em produção
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Em `prisma/schema.prisma`, troque:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```prisma
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+```
+
+por:
+
+```prisma
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+```
+
+e aponte `DATABASE_URL` para o Postgres real (Neon, Supabase, RDS...). O
+schema não usa nenhum recurso exclusivo do SQLite.

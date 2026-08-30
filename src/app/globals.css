@@ -1,26 +1,114 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Base — preto profundo com leve tom violeta */
+  --bg: #08070b;
+  --bg-elevated: #0f0d15;
+  --surface: #14111c;
+  --surface-hover: #1a1624;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.14);
+
+  /* Texto */
+  --text: #f5f3f7;
+  --text-muted: #a89fb3;
+  --text-faint: #6f6779;
+
+  /* Marca — lilás + marsala */
+  --lilac: #a78bfa;
+  --lilac-strong: #8b5cf6;
+  --marsala: #b23a5c;
+  --marsala-strong: #8f2c48;
+  --gradient-aura: linear-gradient(120deg, #c4b5fd 0%, #a78bfa 32%, #b23a5c 78%, #8f2c48 100%);
+
+  /* Semânticas */
+  --success: #34d399;
+  --warning: #fbbf24;
+  --danger: #f87171;
+
+  --radius: 16px;
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-sora);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-bg: var(--bg);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-surface: var(--surface);
+  --color-surface-hover: var(--surface-hover);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-text: var(--text);
+  --color-text-muted: var(--text-muted);
+  --color-text-faint: var(--text-faint);
+  --color-lilac: var(--lilac);
+  --color-lilac-strong: var(--lilac-strong);
+  --color-marsala: var(--marsala);
+  --color-marsala-strong: var(--marsala-strong);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --font-sans: var(--font-sans);
+  --font-display: var(--font-display);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  border-color: var(--border);
+}
+
+html {
+  color-scheme: dark;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+}
+
+::selection {
+  background: var(--lilac-strong);
+  color: white;
+}
+
+.text-gradient-aura {
+  background: var(--gradient-aura);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.glow-lilac {
+  box-shadow: 0 0 80px -20px rgba(167, 139, 250, 0.35);
+}
+
+.card-glass {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-up {
+  animation: fade-up 0.6s ease-out both;
+}
+
+/* Scrollbar discreto */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--surface-hover);
+  border-radius: 999px;
+  border: 2px solid var(--bg);
 }
