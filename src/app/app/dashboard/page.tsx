@@ -8,6 +8,7 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { SpendingDonut, type BreakdownSegment } from "@/components/dashboard/SpendingDonut";
+import { categoryLabel } from "@/lib/categories";
 
 // Paleta categórica validada (ordem fixa, nunca ciclada — ver skill de dataviz)
 const BREAKDOWN_COLORS = {
@@ -20,13 +21,11 @@ const BREAKDOWN_COLORS = {
   outros: "#008300",
 } as const;
 
-const CATEGORY_LABELS: Record<string, string> = {
-  alimentacao: "Alimentação",
-  transporte: "Transporte",
-  lazer: "Lazer",
-  compras: "Compras",
-  outros: "Outros",
-};
+// Só as 5 categorias padrão viram fatia própria no gráfico do dashboard —
+// categorias criadas pelo casal (nome livre) entram na fatia "Outros" pra
+// não estourar o limite de cores validado. A lista completa continua
+// aparecendo normalmente em Gastos.
+const KNOWN_CATEGORY_KEYS = new Set(["alimentacao", "transporte", "lazer", "compras", "outros"]);
 
 export default async function DashboardPage() {
   const user = await requireCoupleUser();
@@ -47,7 +46,9 @@ export default async function DashboardPage() {
 
   const expenseByCategory: Record<string, number> = {};
   for (const e of snap.expenses) {
-    expenseByCategory[e.category] = (expenseByCategory[e.category] ?? 0) + toNumberValue(e.amount);
+    // categorias customizadas somam em "outros" no gráfico (ver KNOWN_CATEGORY_KEYS acima)
+    const key = KNOWN_CATEGORY_KEYS.has(e.category) ? e.category : "outros";
+    expenseByCategory[key] = (expenseByCategory[key] ?? 0) + toNumberValue(e.amount);
   }
 
   const breakdownSegments: BreakdownSegment[] = [
@@ -116,7 +117,7 @@ export default async function DashboardPage() {
                   <div className="min-w-0">
                     <p className="truncate text-sm text-text">{e.description}</p>
                     <p className="text-xs text-text-faint">
-                      {e.user.name} · {CATEGORY_LABELS[e.category]} · {formatDate(e.date)}
+                      {e.user.name} · {categoryLabel(e.category)} · {formatDate(e.date)}
                       {e.source === "whatsapp" && " · via WhatsApp"}
                     </p>
                   </div>

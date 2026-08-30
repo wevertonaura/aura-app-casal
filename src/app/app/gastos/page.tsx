@@ -1,21 +1,16 @@
 import { Trash2 } from "lucide-react";
 import { requireCoupleUser } from "@/lib/auth";
+import { db } from "@/lib/db";
 import { getCoupleSnapshot } from "@/lib/finance";
 import { leisureMessage } from "@/lib/aura/insights";
 import { formatCurrency, formatDate } from "@/lib/format";
+import { DEFAULT_EXPENSE_CATEGORIES, categoryLabel } from "@/lib/categories";
 import { createExpenseAction, deleteExpenseAction } from "@/actions/expenses";
 import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Field, Input, Select } from "@/components/ui/Field";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
-
-const CATEGORIES: { value: string; label: string }[] = [
-  { value: "alimentacao", label: "Alimentação" },
-  { value: "transporte", label: "Transporte" },
-  { value: "lazer", label: "Lazer" },
-  { value: "compras", label: "Compras" },
-  { value: "outros", label: "Outros" },
-];
+import { CategorySelect } from "@/components/gastos/CategorySelect";
 
 function todayISO(): string {
   return new Date().toISOString().slice(0, 10);
@@ -25,6 +20,15 @@ export default async function GastosPage() {
   const user = await requireCoupleUser();
   const snap = await getCoupleSnapshot(user.coupleId!);
   const leisureWarning = leisureMessage(snap.leisureBudget, snap.leisureSpent);
+
+  const customCategories = await db.category.findMany({
+    where: { coupleId: user.coupleId! },
+    orderBy: { name: "asc" },
+  });
+  const categoryOptions = [
+    ...DEFAULT_EXPENSE_CATEGORIES,
+    ...customCategories.map((c) => ({ value: c.name, label: c.name })),
+  ];
 
   return (
     <div className="space-y-6">
@@ -51,15 +55,8 @@ export default async function GastosPage() {
             <Field label="Valor (R$)" htmlFor="amount">
               <Input id="amount" name="amount" type="number" step="0.01" min="0.01" placeholder="0,00" required />
             </Field>
-            <Field label="Categoria" htmlFor="category">
-              <Select id="category" name="category" defaultValue="alimentacao">
-                {CATEGORIES.map((c) => (
-                  <option key={c.value} value={c.value}>
-                    {c.label}
-                  </option>
-                ))}
-              </Select>
-            </Field>
+            {/* key força remontar (e resetar o estado "criando categoria") sempre que a lista muda */}
+            <CategorySelect key={categoryOptions.length} categories={categoryOptions} />
             <Field label="Pessoa" htmlFor="userId">
               <Select id="userId" name="userId" defaultValue={user.id}>
                 {snap.couple.users.map((u) => (
@@ -92,7 +89,7 @@ export default async function GastosPage() {
                   <div className="min-w-0">
                     <p className="truncate text-sm text-text">{e.description}</p>
                     <p className="text-xs text-text-faint">
-                      {e.user.name} · {CATEGORIES.find((c) => c.value === e.category)?.label} · {formatDate(e.date)}
+                      {e.user.name} · {categoryLabel(e.category)} · {formatDate(e.date)}
                       {e.source === "whatsapp" && " · via WhatsApp"}
                     </p>
                   </div>

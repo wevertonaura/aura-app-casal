@@ -58,14 +58,7 @@ model Couple {
   debts            Debt[]
   goals            Goal[]
   whatsappMessages WhatsappMessage[]
-}
-
-enum ExpenseCategory {
-  alimentacao
-  transporte
-  lazer
-  compras
-  outros
+  categories       Category[]
 }
 
 enum ExpenseSource {
@@ -74,13 +67,17 @@ enum ExpenseSource {
 }
 
 model Expense {
-  id          String          @id @default(cuid())
+  id          String        @id @default(cuid())
   description String
   amount      Decimal
-  category    ExpenseCategory
+  // String livre em vez de enum: as 5 categorias padrão (alimentacao,
+  // transporte, lazer, compras, outros) usam essas chaves em minúsculo por
+  // compatibilidade com o parser da Aura no WhatsApp; categorias criadas
+  // pelo casal na aba Gastos guardam o nome exatamente como digitado.
+  category    String
   date        DateTime
-  source      ExpenseSource   @default(app)
-  createdAt   DateTime        @default(now())
+  source      ExpenseSource @default(app)
+  createdAt   DateTime      @default(now())
 
   coupleId String
   couple   Couple @relation(fields: [coupleId], references: [id], onDelete: Cascade)
@@ -90,6 +87,19 @@ model Expense {
 
   @@index([coupleId])
   @@index([userId])
+}
+
+/// Categorias de gasto criadas pelo casal, além das 5 padrão (que não
+/// precisam de registro aqui — só existem em código).
+model Category {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+
+  coupleId String
+  couple   Couple @relation(fields: [coupleId], references: [id], onDelete: Cascade)
+
+  @@unique([coupleId, name])
 }
 
 enum FixedBillCategory {

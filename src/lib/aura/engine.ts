@@ -1,17 +1,9 @@
 import { db } from "@/lib/db";
 import { getCoupleSnapshot } from "@/lib/finance";
 import { formatCurrency, formatMonthYear } from "@/lib/format";
-import { parseAuraMessage, type ExpenseCategoryGuess } from "@/lib/aura/parseMessage";
+import { categoryLabel } from "@/lib/categories";
+import { parseAuraMessage } from "@/lib/aura/parseMessage";
 import { whatsappClient } from "@/lib/aura/whatsapp-client";
-import type { ExpenseCategory } from "@prisma/client";
-
-const CATEGORY_LABELS: Record<ExpenseCategoryGuess, string> = {
-  alimentacao: "Alimentação",
-  transporte: "Transporte",
-  lazer: "Lazer",
-  compras: "Compras",
-  outros: "Outros",
-};
 
 function endOfCurrentYear(): Date {
   const now = new Date();
@@ -46,12 +38,12 @@ export async function handleAuraMessage(params: {
           userId,
           description: intent.description,
           amount: intent.amount,
-          category: intent.category as ExpenseCategory,
+          category: intent.category,
           date: new Date(),
           source: "whatsapp",
         },
       });
-      reply = `✅ Registrei ${formatCurrency(intent.amount)} em ${CATEGORY_LABELS[intent.category]} (${intent.description}).`;
+      reply = `✅ Registrei ${formatCurrency(intent.amount)} em ${categoryLabel(intent.category)} (${intent.description}).`;
       relatedType = "expense";
       break;
     }
