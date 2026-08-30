@@ -2,11 +2,23 @@ import { Wallet, CalendarClock, Receipt, Landmark, Sparkles, PiggyBank } from "l
 import { requireCoupleUser } from "@/lib/auth";
 import { getCoupleSnapshot } from "@/lib/finance";
 import { auraDashboardMessage } from "@/lib/aura/insights";
-import { formatCurrency, formatDate, formatMonthYear } from "@/lib/format";
+import { formatCurrency, formatDate, formatMonthYear, toNumberValue } from "@/lib/format";
 import { StatTile } from "@/components/ui/StatTile";
 import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { ProgressBar } from "@/components/ui/ProgressBar";
+import { SpendingDonut, type BreakdownSegment } from "@/components/dashboard/SpendingDonut";
+
+// Paleta categórica validada (ordem fixa, nunca ciclada — ver skill de dataviz)
+const BREAKDOWN_COLORS = {
+  fixedBills: "#3987e5",
+  debts: "#d95926",
+  alimentacao: "#199e70",
+  transporte: "#c98500",
+  lazer: "#d55181",
+  compras: "#9085e9",
+  outros: "#008300",
+} as const;
 
 const CATEGORY_LABELS: Record<string, string> = {
   alimentacao: "Alimentação",
@@ -32,6 +44,21 @@ export default async function DashboardPage() {
     warning: "border-warning/30 bg-warning/10 text-warning",
     danger: "border-danger/30 bg-danger/10 text-danger",
   }[aura.tone];
+
+  const expenseByCategory: Record<string, number> = {};
+  for (const e of snap.expenses) {
+    expenseByCategory[e.category] = (expenseByCategory[e.category] ?? 0) + toNumberValue(e.amount);
+  }
+
+  const breakdownSegments: BreakdownSegment[] = [
+    { key: "fixedBills", label: "Contas fixas", color: BREAKDOWN_COLORS.fixedBills, value: snap.fixedBillsTotal },
+    { key: "debts", label: "Dívidas", color: BREAKDOWN_COLORS.debts, value: snap.debtsMonthlyTotal },
+    { key: "alimentacao", label: "Alimentação", color: BREAKDOWN_COLORS.alimentacao, value: expenseByCategory.alimentacao ?? 0 },
+    { key: "transporte", label: "Transporte", color: BREAKDOWN_COLORS.transporte, value: expenseByCategory.transporte ?? 0 },
+    { key: "lazer", label: "Lazer", color: BREAKDOWN_COLORS.lazer, value: expenseByCategory.lazer ?? 0 },
+    { key: "compras", label: "Compras", color: BREAKDOWN_COLORS.compras, value: expenseByCategory.compras ?? 0 },
+    { key: "outros", label: "Outros", color: BREAKDOWN_COLORS.outros, value: expenseByCategory.outros ?? 0 },
+  ].filter((s) => s.value > 0);
 
   return (
     <div className="space-y-6">
@@ -65,6 +92,14 @@ export default async function DashboardPage() {
           tone={snap.available < 0 ? "danger" : "success"}
         />
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Para onde vai o dinheiro</CardTitle>
+          <Badge tone="lilac">{formatMonthYear(new Date())}</Badge>
+        </CardHeader>
+        <SpendingDonut segments={breakdownSegments} />
+      </Card>
 
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">
