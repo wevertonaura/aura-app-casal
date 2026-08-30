@@ -38,6 +38,12 @@ const FEATURES = [
   },
 ];
 
+const STATS = [
+  { value: "53%", desc: "dos brasileiros dizem que dinheiro é o principal motivo de briga no relacionamento" },
+  { value: "45%", desc: "já ficaram com dívida por causa de um parceiro(a)" },
+  { value: "4 em 10", desc: "já ficaram com o nome sujo por causa de um relacionamento" },
+];
+
 const STEPS = [
   {
     n: "1",
@@ -123,6 +129,21 @@ export default function LandingPage() {
             </PhoneMockup>
           </div>
         </div>
+      </section>
+
+      {/* Estatísticas */}
+      <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-6">
+        <div className="card-glass grid gap-8 p-8 sm:grid-cols-3 sm:p-10">
+          {STATS.map((s) => (
+            <div key={s.desc} className="text-center sm:text-left">
+              <p className="font-display text-4xl font-semibold text-gradient-aura">{s.value}</p>
+              <p className="mt-2 text-sm text-text-muted">{s.desc}</p>
+            </div>
+          ))}
+        </div>
+        <p className="mt-4 text-center text-xs text-text-faint">
+          Fonte: pesquisa Serasa em parceria com o Instituto Opinion Box, com 1.120 brasileiros de todas as regiões.
+        </p>
       </section>
 
       {/* Como funciona */}
