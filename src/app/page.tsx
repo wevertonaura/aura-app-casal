@@ -65,7 +65,7 @@ const STEPS = [
 export default function LandingPage() {
   return (
     <div className="relative overflow-x-hidden bg-bg">
-      <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[900px] bg-[radial-gradient(ellipse_at_top,_rgba(167,139,250,0.16),_transparent_60%)]" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[900px] bg-[radial-gradient(ellipse_at_top,_rgba(14,165,233,0.14),_transparent_60%)]" />
 
       {/* Nav */}
       <header className="sticky top-0 z-30 border-b border-border bg-bg/70 backdrop-blur">

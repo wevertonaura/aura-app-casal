@@ -1,30 +1,32 @@
 @import "tailwindcss";
 
 :root {
-  /* Base — preto profundo com leve tom violeta */
-  --bg: #08070b;
-  --bg-elevated: #0f0d15;
-  --surface: #14111c;
-  --surface-hover: #1a1624;
-  --border: rgba(255, 255, 255, 0.08);
-  --border-strong: rgba(255, 255, 255, 0.14);
+  /* Base — branco com leve tom de gelo */
+  --bg: #ffffff;
+  --bg-elevated: #f3f8fd;
+  --surface: #f8fbfe;
+  --surface-hover: #eaf2fa;
+  --border: rgba(15, 23, 42, 0.08);
+  --border-strong: rgba(15, 23, 42, 0.14);
 
   /* Texto */
-  --text: #f5f3f7;
-  --text-muted: #a89fb3;
-  --text-faint: #6f6779;
+  --text: #0f172a;
+  --text-muted: #4b5b75;
+  --text-faint: #8a97ac;
 
-  /* Marca — lilás + marsala */
-  --lilac: #a78bfa;
-  --lilac-strong: #8b5cf6;
-  --marsala: #b23a5c;
-  --marsala-strong: #8f2c48;
-  --gradient-aura: linear-gradient(120deg, #c4b5fd 0%, #a78bfa 32%, #b23a5c 78%, #8f2c48 100%);
+  /* Marca — azul cristal (mantém os nomes de variável "lilac"/"marsala" por
+     compatibilidade com as classes utilitárias já usadas em todo o app —
+     só os valores mudaram) */
+  --lilac: #0ea5e9;
+  --lilac-strong: #0284c7;
+  --marsala: #2563eb;
+  --marsala-strong: #1d4ed8;
+  --gradient-aura: linear-gradient(120deg, #38bdf8 0%, #0ea5e9 35%, #2563eb 75%, #1d4ed8 100%);
 
-  /* Semânticas */
-  --success: #34d399;
-  --warning: #fbbf24;
-  --danger: #f87171;
+  /* Semânticas — ajustadas pra contraste em fundo claro */
+  --success: #16a34a;
+  --warning: #b45309;
+  --danger: #dc2626;
 
   --radius: 16px;
   --font-sans: var(--font-inter);
@@ -57,7 +59,7 @@
 }
 
 html {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 body {
@@ -79,13 +81,16 @@ body {
 }
 
 .glow-lilac {
-  box-shadow: 0 0 80px -20px rgba(167, 139, 250, 0.35);
+  box-shadow: 0 0 80px -20px rgba(14, 165, 233, 0.35);
 }
 
 .card-glass {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.03),
+    0 8px 24px -12px rgba(37, 99, 235, 0.12);
 }
 
 @keyframes float {

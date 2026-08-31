@@ -11,14 +11,14 @@ import { SpendingDonut, type BreakdownSegment } from "@/components/dashboard/Spe
 import { CoupleSplit, type SplitPerson } from "@/components/dashboard/CoupleSplit";
 import { categoryLabel } from "@/lib/categories";
 
-// Paleta categórica validada (ordem fixa, nunca ciclada — ver skill de dataviz)
+// Paleta categórica validada pro modo claro (ordem fixa, nunca ciclada — ver skill de dataviz)
 const BREAKDOWN_COLORS = {
-  fixedBills: "#3987e5",
-  debts: "#d95926",
-  alimentacao: "#199e70",
-  transporte: "#c98500",
-  lazer: "#d55181",
-  compras: "#9085e9",
+  fixedBills: "#2a78d6",
+  debts: "#eb6834",
+  alimentacao: "#1baf7a",
+  transporte: "#eda100",
+  lazer: "#e87ba4",
+  compras: "#4a3aa7",
   outros: "#008300",
 } as const;
 
