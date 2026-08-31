@@ -8,6 +8,7 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { SpendingDonut, type BreakdownSegment } from "@/components/dashboard/SpendingDonut";
+import { CoupleSplit, type SplitPerson } from "@/components/dashboard/CoupleSplit";
 import { categoryLabel } from "@/lib/categories";
 
 // Paleta categórica validada (ordem fixa, nunca ciclada — ver skill de dataviz)
@@ -50,6 +51,24 @@ export default async function DashboardPage() {
     const key = KNOWN_CATEGORY_KEYS.has(e.category) ? e.category : "outros";
     expenseByCategory[key] = (expenseByCategory[key] ?? 0) + toNumberValue(e.amount);
   }
+
+  const expensesByUser: Record<string, number> = {};
+  for (const e of snap.expenses) {
+    expensesByUser[e.userId] = (expensesByUser[e.userId] ?? 0) + toNumberValue(e.amount);
+  }
+  const splitPeople: SplitPerson[] = snap.couple.users.map((u, idx) => {
+    const income = toNumberValue(u.monthlyIncome);
+    const paid = expensesByUser[u.id] ?? 0;
+    return {
+      id: u.id,
+      name: u.name,
+      color: idx === 0 ? "var(--lilac)" : "var(--marsala)",
+      income,
+      incomePct: snap.coupleIncome > 0 ? (income / snap.coupleIncome) * 100 : 0,
+      paid,
+      paidPct: snap.monthExpensesTotal > 0 ? (paid / snap.monthExpensesTotal) * 100 : 0,
+    };
+  });
 
   const breakdownSegments: BreakdownSegment[] = [
     { key: "fixedBills", label: "Contas fixas", color: BREAKDOWN_COLORS.fixedBills, value: snap.fixedBillsTotal },
@@ -94,13 +113,28 @@ export default async function DashboardPage() {
         />
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Para onde vai o dinheiro</CardTitle>
-          <Badge tone="lilac">{formatMonthYear(new Date())}</Badge>
-        </CardHeader>
-        <SpendingDonut segments={breakdownSegments} />
-      </Card>
+      <div className="grid gap-6 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Para onde vai o dinheiro</CardTitle>
+            <Badge tone="lilac">{formatMonthYear(new Date())}</Badge>
+          </CardHeader>
+          <SpendingDonut segments={breakdownSegments} />
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Quem está pagando</CardTitle>
+          </CardHeader>
+          {splitPeople.length < 2 ? (
+            <p className="text-sm text-text-faint">
+              Assim que o parceiro(a) entrar no casal, a divisão aparece aqui.
+            </p>
+          ) : (
+            <CoupleSplit people={splitPeople} />
+          )}
+        </Card>
+      </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">
