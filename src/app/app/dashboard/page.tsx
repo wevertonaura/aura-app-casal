@@ -45,6 +45,10 @@ export default async function DashboardPage() {
     danger: "border-danger/30 bg-danger/10 text-danger",
   }[aura.tone];
 
+  const firstName = (name: string) => name.trim().split(" ")[0];
+  const partner = snap.couple.users.find((u) => u.id !== user.id);
+  const greetingName = partner ? `${firstName(user.name)} e ${firstName(partner.name)}` : firstName(user.name);
+
   const expenseByCategory: Record<string, number> = {};
   for (const e of snap.expenses) {
     // categorias customizadas somam em "outros" no gráfico (ver KNOWN_CATEGORY_KEYS acima)
@@ -83,8 +87,8 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-2xl font-semibold text-text">Dashboard</h1>
-        <p className="text-sm text-text-muted">{formatMonthYear(new Date())}</p>
+        <h1 className="font-display text-2xl font-semibold text-text">Olá, {greetingName}!</h1>
+        <p className="text-sm text-text-muted">Dashboard · {formatMonthYear(new Date())}</p>
       </div>
 
       <div className={`rounded-2xl border px-5 py-4 text-sm font-medium ${toneClasses}`}>{aura.text}</div>
