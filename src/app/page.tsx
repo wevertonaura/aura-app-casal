@@ -190,7 +190,7 @@ export default function LandingPage() {
       {/* Preço */}
       <section id="preco" className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
         <div className="mb-10 text-center">
-          <h2 className="font-display text-3xl font-semibold text-text">Um plano. Tudo incluso.</h2>
+          <h2 className="font-display text-3xl font-semibold text-text">Sozinho(a) ou a dois. Tudo incluso.</h2>
           <p className="mt-2 text-text-muted">Sem limite de lançamentos, sem letra miúda.</p>
         </div>
         <PricingToggle />
