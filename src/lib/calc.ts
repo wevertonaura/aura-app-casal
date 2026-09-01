@@ -1,5 +1,17 @@
 import { toNumberValue } from "@/lib/format";
 
+/**
+ * Converte o valor de um <input type="date"> ("AAAA-MM-DD") pra meia-noite
+ * no fuso LOCAL, não UTC. `new Date("AAAA-MM-DD")` (parsing nativo do JS)
+ * interpreta strings só-de-data como UTC — misturado com startOfMonth/
+ * endOfMonth (que usam o fuso local), isso fazia lançamentos do dia 1 do
+ * mês sumirem do filtro "mês atual" em fusos atrás de UTC (ex: Brasil).
+ */
+export function parseLocalDate(dateStr: string): Date {
+  const [year, month, day] = dateStr.split("-").map(Number);
+  return new Date(year, (month ?? 1) - 1, day ?? 1);
+}
+
 export function startOfMonth(date = new Date()): Date {
   return new Date(date.getFullYear(), date.getMonth(), 1);
 }

@@ -27,7 +27,9 @@ export default async function ContasFixasPage() {
     <div className="space-y-6">
       <div>
         <h1 className="font-display text-2xl font-semibold text-text">Contas fixas</h1>
-        <p className="text-sm text-text-muted">Despesas recorrentes e parcelas do casal.</p>
+        <p className="text-sm text-text-muted">
+          {snap.couple.mode === "individual" ? "Despesas recorrentes e parcelas." : "Despesas recorrentes e parcelas do casal."}
+        </p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[340px_1fr]">

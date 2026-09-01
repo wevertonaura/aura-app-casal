@@ -16,7 +16,9 @@ export default async function SonhosPage() {
     <div className="space-y-6">
       <div>
         <h1 className="font-display text-2xl font-semibold text-text">Sonhos</h1>
-        <p className="text-sm text-text-muted">Objetivos financeiros do casal.</p>
+        <p className="text-sm text-text-muted">
+          {snap.couple.mode === "individual" ? "Seus objetivos financeiros." : "Objetivos financeiros do casal."}
+        </p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[340px_1fr]">

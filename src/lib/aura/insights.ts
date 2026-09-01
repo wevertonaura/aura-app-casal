@@ -9,15 +9,19 @@ export function auraDashboardMessage(params: {
   monthExpenses: number;
   leisureBudget: number;
   leisureSpent: number;
+  individual?: boolean;
 }): { tone: "success" | "warning" | "danger"; text: string } {
-  const { coupleIncome, fixedBillsTotal, monthExpenses, leisureBudget, leisureSpent } = params;
+  const { coupleIncome, fixedBillsTotal, monthExpenses, leisureBudget, leisureSpent, individual = false } = params;
   const committed = fixedBillsTotal + monthExpenses;
   const available = coupleIncome - committed;
+  const you = individual ? "Você" : "Vocês";
+  const youLower = individual ? "você" : "vocês";
+  const are = individual ? "está" : "estão";
 
   if (coupleIncome > 0 && committed > coupleIncome) {
     return {
       tone: "danger",
-      text: `⚠️ Vocês já comprometeram ${formatPct(committed, coupleIncome)}% da renda do mês — estão gastando mais do que ganham.`,
+      text: `⚠️ ${you} já ${individual ? "comprometeu" : "comprometeram"} ${formatPct(committed, coupleIncome)}% da renda do mês — ${are} gastando mais do que ${individual ? "ganha" : "ganham"}.`,
     };
   }
 
@@ -31,20 +35,20 @@ export function auraDashboardMessage(params: {
   if (coupleIncome > 0 && committed / coupleIncome >= 0.85) {
     return {
       tone: "warning",
-      text: `⚠️ Vocês estão gastando mais do que o planejado este mês. Sobram apenas ${formatMoneyShort(available)} até o fim do mês.`,
+      text: `⚠️ ${you} ${are} gastando mais do que o planejado este mês. Sobram apenas ${formatMoneyShort(available)} até o fim do mês.`,
     };
   }
 
   if (coupleIncome === 0) {
     return {
       tone: "warning",
-      text: "👋 Cadastre a renda de vocês em Configurações para a Aura começar a acompanhar o orçamento.",
+      text: `👋 Cadastre ${individual ? "sua renda" : "a renda de vocês"} em Configurações para a Aura começar a acompanhar o orçamento.`,
     };
   }
 
   return {
     tone: "success",
-    text: "🟢 Este mês vocês estão dentro do orçamento. Continuem assim!",
+    text: `🟢 Este mês ${youLower} ${are} dentro do orçamento. Continue${individual ? "" : "m"} assim!`,
   };
 }
 

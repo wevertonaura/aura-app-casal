@@ -15,12 +15,15 @@ export default async function ConfiguracoesPage() {
     include: { users: true },
   });
   const coupleIncome = couple.users.reduce((sum, u) => sum + Number(u.monthlyIncome), 0);
+  const isIndividual = couple.mode === "individual";
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="font-display text-2xl font-semibold text-text">Configurações</h1>
-        <p className="text-sm text-text-muted">Perfil, renda e preferências do casal.</p>
+        <p className="text-sm text-text-muted">
+          {isIndividual ? "Perfil, renda e preferências." : "Perfil, renda e preferências do casal."}
+        </p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -65,36 +68,42 @@ export default async function ConfiguracoesPage() {
           </form>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Convidar parceiro(a)</CardTitle>
-          </CardHeader>
-          <p className="mb-3 text-sm text-text-muted">
-            Compartilhe este código para seu parceiro(a) entrar no casal.
-          </p>
-          <div className="flex items-center justify-between rounded-xl border border-border-strong bg-bg-elevated px-4 py-3">
-            <span className="font-display text-lg font-semibold tracking-widest text-lilac">{couple.inviteCode}</span>
-            <CopyButton value={couple.inviteCode} />
-          </div>
-        </Card>
+        {!isIndividual && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Convidar parceiro(a)</CardTitle>
+            </CardHeader>
+            <p className="mb-3 text-sm text-text-muted">
+              Compartilhe este código para seu parceiro(a) entrar no casal.
+            </p>
+            <div className="flex items-center justify-between rounded-xl border border-border-strong bg-bg-elevated px-4 py-3">
+              <span className="font-display text-lg font-semibold tracking-widest text-lilac">
+                {couple.inviteCode}
+              </span>
+              <CopyButton value={couple.inviteCode} />
+            </div>
+          </Card>
+        )}
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Renda do casal</CardTitle>
-          </CardHeader>
-          <ul className="space-y-2 text-sm">
-            {couple.users.map((u) => (
-              <li key={u.id} className="flex items-center justify-between text-text-muted">
-                <span>{u.name}</span>
-                <span className="font-medium text-text">{formatCurrency(Number(u.monthlyIncome))}</span>
-              </li>
-            ))}
-          </ul>
-          <div className="mt-3 flex items-center justify-between border-t border-border pt-3 text-sm font-semibold text-text">
-            <span>Total</span>
-            <span>{formatCurrency(coupleIncome)}</span>
-          </div>
-        </Card>
+        {!isIndividual && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Renda do casal</CardTitle>
+            </CardHeader>
+            <ul className="space-y-2 text-sm">
+              {couple.users.map((u) => (
+                <li key={u.id} className="flex items-center justify-between text-text-muted">
+                  <span>{u.name}</span>
+                  <span className="font-medium text-text">{formatCurrency(Number(u.monthlyIncome))}</span>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-3 flex items-center justify-between border-t border-border pt-3 text-sm font-semibold text-text">
+              <span>Total</span>
+              <span>{formatCurrency(coupleIncome)}</span>
+            </div>
+          </Card>
+        )}
       </div>
     </div>
   );

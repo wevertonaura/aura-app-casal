@@ -46,11 +46,21 @@ model Session {
   @@index([userId])
 }
 
+enum CoupleMode {
+  conjunto
+  individual
+}
+
 model Couple {
-  id            String   @id @default(cuid())
-  inviteCode    String   @unique
-  leisureBudget Decimal  @default(0)
-  createdAt     DateTime @default(now())
+  id            String     @id @default(cuid())
+  inviteCode    String     @unique
+  leisureBudget Decimal    @default(0)
+  // "conjunto" = pensado pra casal (padrão); "individual" = uma pessoa só,
+  // sem convite de parceiro(a). Mesmo modelo de dados nos dois casos — o
+  // modo individual é só um "casal" de uma pessoa. Preço por modo fica
+  // pra decidir depois (ver PricingToggle) — este campo só guarda a escolha.
+  mode          CoupleMode @default(conjunto)
+  createdAt     DateTime   @default(now())
 
   users            User[]
   expenses         Expense[]

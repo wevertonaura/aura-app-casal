@@ -16,7 +16,9 @@ export default async function DividasPage() {
     <div className="space-y-6">
       <div>
         <h1 className="font-display text-2xl font-semibold text-text">Dívidas</h1>
-        <p className="text-sm text-text-muted">O que o casal deve e o plano para quitar.</p>
+        <p className="text-sm text-text-muted">
+          {snap.couple.mode === "individual" ? "O que você deve e o plano para quitar." : "O que o casal deve e o plano para quitar."}
+        </p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[340px_1fr]">
@@ -46,7 +48,9 @@ export default async function DividasPage() {
             <Badge tone="lilac">Total: {formatCurrency(snap.debtsTotal)}</Badge>
           </CardHeader>
           {snap.debts.length === 0 ? (
-            <p className="py-8 text-center text-sm text-text-faint">Vocês não têm dívidas cadastradas. 🎉</p>
+            <p className="py-8 text-center text-sm text-text-faint">
+              {snap.couple.mode === "individual" ? "Você não tem dívidas cadastradas. 🎉" : "Vocês não têm dívidas cadastradas. 🎉"}
+            </p>
           ) : (
             <ul className="divide-y divide-border">
               {snap.debts.map((debt) => (

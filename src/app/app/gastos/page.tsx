@@ -34,7 +34,9 @@ export default async function GastosPage() {
     <div className="space-y-6">
       <div>
         <h1 className="font-display text-2xl font-semibold text-text">Gastos</h1>
-        <p className="text-sm text-text-muted">Lançamentos do mês atual do casal.</p>
+        <p className="text-sm text-text-muted">
+          {snap.couple.mode === "individual" ? "Lançamentos do mês atual." : "Lançamentos do mês atual do casal."}
+        </p>
       </div>
 
       {leisureWarning && (
@@ -57,15 +59,17 @@ export default async function GastosPage() {
             </Field>
             {/* key força remontar (e resetar o estado "criando categoria") sempre que a lista muda */}
             <CategorySelect key={categoryOptions.length} categories={categoryOptions} />
-            <Field label="Pessoa" htmlFor="userId">
-              <Select id="userId" name="userId" defaultValue={user.id}>
-                {snap.couple.users.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.name}
-                  </option>
-                ))}
-              </Select>
-            </Field>
+            {snap.couple.users.length > 1 && (
+              <Field label="Pessoa" htmlFor="userId">
+                <Select id="userId" name="userId" defaultValue={user.id}>
+                  {snap.couple.users.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.name}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+            )}
             <Field label="Data" htmlFor="date">
               <Input id="date" name="date" type="date" defaultValue={todayISO()} required />
             </Field>

@@ -3,9 +3,11 @@ import { formatCurrency } from "@/lib/format";
 export function Topbar({
   members,
   coupleIncome,
+  individual = false,
 }: {
   members: { name: string; monthlyIncome: number; avatarUrl?: string | null }[];
   coupleIncome: number;
+  individual?: boolean;
 }) {
   return (
     <header className="flex items-center justify-between gap-4 border-b border-border bg-bg-elevated/60 px-4 py-4 backdrop-blur sm:px-6">
@@ -16,7 +18,7 @@ export function Topbar({
 
       <div className="ml-auto flex items-center gap-4">
         <div className="hidden text-right sm:block">
-          <p className="text-xs text-text-faint">Renda do casal</p>
+          <p className="text-xs text-text-faint">{individual ? "Renda" : "Renda do casal"}</p>
           <p className="font-display text-sm font-semibold text-text">{formatCurrency(coupleIncome)}</p>
         </div>
         <div className="flex -space-x-2">

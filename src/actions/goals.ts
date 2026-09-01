@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { requireCoupleUser } from "@/lib/auth";
+import { parseLocalDate } from "@/lib/calc";
 
 export async function createGoalAction(formData: FormData) {
   const user = await requireCoupleUser();
@@ -18,7 +19,7 @@ export async function createGoalAction(formData: FormData) {
       coupleId: user.coupleId!,
       name,
       targetAmount,
-      targetDate: new Date(targetDateStr),
+      targetDate: parseLocalDate(targetDateStr),
       savedAmount: Number.isFinite(savedAmount) && savedAmount >= 0 ? savedAmount : 0,
     },
   });

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { signupAction } from "@/actions/auth";
 import { Button } from "@/components/ui/Button";
 import { Field, Input } from "@/components/ui/Field";
+import { AccountModeToggle } from "@/components/signup/AccountModeToggle";
 
 export default function SignupPage() {
   const [state, formAction, pending] = useActionState(signupAction, undefined);
@@ -31,6 +32,7 @@ export default function SignupPage() {
           <Field label="Senha" htmlFor="password">
             <Input id="password" name="password" type="password" placeholder="Mínimo 6 caracteres" required />
           </Field>
+          <AccountModeToggle />
           {state?.error && <p className="text-sm text-danger">{state.error}</p>}
           <Button type="submit" className="w-full" disabled={pending}>
             {pending ? "Criando conta..." : "Criar conta"}

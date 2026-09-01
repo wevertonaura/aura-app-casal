@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { requireCoupleUser } from "@/lib/auth";
 import { NEW_CATEGORY_VALUE } from "@/lib/categories";
+import { parseLocalDate } from "@/lib/calc";
 
 export async function createExpenseAction(formData: FormData) {
   const user = await requireCoupleUser();
@@ -11,7 +12,7 @@ export async function createExpenseAction(formData: FormData) {
   const amount = Number(formData.get("amount"));
   const userId = String(formData.get("userId") ?? user.id);
   const dateStr = String(formData.get("date") ?? "");
-  const date = dateStr ? new Date(dateStr) : new Date();
+  const date = dateStr ? parseLocalDate(dateStr) : new Date();
 
   const selectedCategory = String(formData.get("category") ?? "outros");
   const newCategoryName = String(formData.get("newCategory") ?? "").trim();

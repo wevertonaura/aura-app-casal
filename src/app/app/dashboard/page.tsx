@@ -37,6 +37,7 @@ export default async function DashboardPage() {
     monthExpenses: snap.monthExpensesTotal,
     leisureBudget: snap.leisureBudget,
     leisureSpent: snap.leisureSpent,
+    individual: snap.couple.mode === "individual",
   });
 
   const toneClasses = {
@@ -45,6 +46,7 @@ export default async function DashboardPage() {
     danger: "border-danger/30 bg-danger/10 text-danger",
   }[aura.tone];
 
+  const isIndividual = snap.couple.mode === "individual";
   const firstName = (name: string) => name.trim().split(" ")[0];
   const partner = snap.couple.users.find((u) => u.id !== user.id);
   const greetingName = partner ? `${firstName(user.name)} e ${firstName(partner.name)}` : firstName(user.name);
@@ -94,7 +96,11 @@ export default async function DashboardPage() {
       <div className={`rounded-2xl border px-5 py-4 text-sm font-medium ${toneClasses}`}>{aura.text}</div>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
-        <StatTile label="Renda do casal" value={formatCurrency(snap.coupleIncome)} icon={Wallet} />
+        <StatTile
+          label={isIndividual ? "Renda" : "Renda do casal"}
+          value={formatCurrency(snap.coupleIncome)}
+          icon={Wallet}
+        />
         <StatTile label="Contas fixas" value={formatCurrency(snap.fixedBillsTotal)} icon={CalendarClock} />
         <StatTile label="Gastos do mês" value={formatCurrency(snap.monthExpensesTotal)} icon={Receipt} />
         <StatTile
@@ -118,7 +124,7 @@ export default async function DashboardPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
+        <Card className={isIndividual ? "lg:col-span-3" : "lg:col-span-2"}>
           <CardHeader>
             <CardTitle>Para onde vai o dinheiro</CardTitle>
             <Badge tone="lilac">{formatMonthYear(new Date())}</Badge>
@@ -126,18 +132,20 @@ export default async function DashboardPage() {
           <SpendingDonut segments={breakdownSegments} />
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Quem está pagando</CardTitle>
-          </CardHeader>
-          {splitPeople.length < 2 ? (
-            <p className="text-sm text-text-faint">
-              Assim que o parceiro(a) entrar no casal, a divisão aparece aqui.
-            </p>
-          ) : (
-            <CoupleSplit people={splitPeople} />
-          )}
-        </Card>
+        {!isIndividual && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Quem está pagando</CardTitle>
+            </CardHeader>
+            {splitPeople.length < 2 ? (
+              <p className="text-sm text-text-faint">
+                Assim que o parceiro(a) entrar no casal, a divisão aparece aqui.
+              </p>
+            ) : (
+              <CoupleSplit people={splitPeople} />
+            )}
+          </Card>
+        )}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">

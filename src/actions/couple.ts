@@ -1,16 +1,12 @@
 "use server";
 
-import { randomBytes } from "crypto";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { requireUser, requireCoupleUser } from "@/lib/auth";
+import { generateInviteCode } from "@/lib/inviteCode";
 
 export type CoupleState = { error?: string } | undefined;
-
-function generateInviteCode(): string {
-  return randomBytes(3).toString("hex").toUpperCase();
-}
 
 export async function createCoupleAction(formData: FormData): Promise<void> {
   const user = await requireUser();

@@ -22,7 +22,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <div className="flex min-h-screen bg-bg">
       <Sidebar userName={user.name} />
       <div className="flex min-w-0 flex-1 flex-col">
-        <Topbar members={members} coupleIncome={coupleIncome} />
+        <Topbar members={members} coupleIncome={coupleIncome} individual={couple.mode === "individual"} />
         <main className="flex-1 px-4 pb-20 pt-6 sm:px-6 lg:pb-6">{children}</main>
       </div>
       <MobileTabBar />
