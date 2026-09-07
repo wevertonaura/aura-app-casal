@@ -12,6 +12,8 @@ export async function createFixedBillAction(formData: FormData) {
   const category = String(formData.get("category") ?? "outro") as FixedBillCategory;
   const totalInstallmentsRaw = String(formData.get("totalInstallments") ?? "").trim();
   const totalInstallments = totalInstallmentsRaw ? Number(totalInstallmentsRaw) : null;
+  const dueDayRaw = Number(formData.get("dueDay"));
+  const dueDay = Number.isFinite(dueDayRaw) && dueDayRaw >= 1 && dueDayRaw <= 31 ? Math.round(dueDayRaw) : new Date().getDate();
 
   if (!name || !Number.isFinite(amount) || amount <= 0) return;
 
@@ -22,8 +24,25 @@ export async function createFixedBillAction(formData: FormData) {
       amount,
       category,
       totalInstallments: totalInstallments && totalInstallments > 0 ? Math.round(totalInstallments) : null,
+      dueDay,
       startDate: new Date(),
     },
+  });
+
+  revalidatePath("/app/contas-fixas");
+  revalidatePath("/app/dashboard");
+}
+
+export async function updateFixedBillDueDayAction(formData: FormData) {
+  const user = await requireCoupleUser();
+  const id = String(formData.get("id") ?? "");
+  const dueDayRaw = Number(formData.get("dueDay"));
+
+  if (!id || !Number.isFinite(dueDayRaw) || dueDayRaw < 1 || dueDayRaw > 31) return;
+
+  await db.fixedBill.updateMany({
+    where: { id, coupleId: user.coupleId! },
+    data: { dueDay: Math.round(dueDayRaw) },
   });
 
   revalidatePath("/app/contas-fixas");

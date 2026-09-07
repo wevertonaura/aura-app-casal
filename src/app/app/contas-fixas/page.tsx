@@ -1,12 +1,13 @@
-import { Trash2 } from "lucide-react";
+import { Trash2, Bell } from "lucide-react";
 import { requireCoupleUser } from "@/lib/auth";
 import { getCoupleSnapshot } from "@/lib/finance";
 import { formatCurrency } from "@/lib/format";
-import { createFixedBillAction, deleteFixedBillAction } from "@/actions/fixedBills";
+import { createFixedBillAction, deleteFixedBillAction, updateFixedBillDueDayAction } from "@/actions/fixedBills";
 import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Field, Input, Select } from "@/components/ui/Field";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
+import { DueDayField } from "@/components/contas-fixas/DueDayField";
 
 const CATEGORIES: { value: string; label: string }[] = [
   { value: "aluguel", label: "Aluguel" },
@@ -22,6 +23,7 @@ const CATEGORIES: { value: string; label: string }[] = [
 export default async function ContasFixasPage() {
   const user = await requireCoupleUser();
   const snap = await getCoupleSnapshot(user.coupleId!);
+  const today = new Date().getDate();
 
   return (
     <div className="space-y-6">
@@ -29,6 +31,14 @@ export default async function ContasFixasPage() {
         <h1 className="font-display text-2xl font-semibold text-text">Contas fixas</h1>
         <p className="text-sm text-text-muted">
           {snap.couple.mode === "individual" ? "Despesas recorrentes e parcelas." : "Despesas recorrentes e parcelas do casal."}
+        </p>
+      </div>
+
+      <div className="card-glass flex items-start gap-3 p-4 text-sm text-text-muted">
+        <Bell className="mt-0.5 h-4 w-4 shrink-0 text-lilac" />
+        <p>
+          A Aura manda um lembrete no WhatsApp de quem estiver conectado <strong className="text-text">3 dias antes</strong> do
+          vencimento de cada conta. Defina o dia do vencimento em cada uma abaixo.
         </p>
       </div>
 
@@ -53,6 +63,9 @@ export default async function ContasFixasPage() {
                 ))}
               </Select>
             </Field>
+            <Field label="Dia do vencimento" htmlFor="dueDay">
+              <Input id="dueDay" name="dueDay" type="number" min="1" max="31" defaultValue={today} required />
+            </Field>
             <Field label="Parcelas (deixe vazio se não for parcelado)" htmlFor="totalInstallments">
               <Input id="totalInstallments" name="totalInstallments" type="number" min="1" placeholder="Ex: 10" />
             </Field>
@@ -72,7 +85,7 @@ export default async function ContasFixasPage() {
           ) : (
             <ul className="divide-y divide-border">
               {snap.fixedBills.map((bill) => (
-                <li key={bill.id} className="flex items-center justify-between gap-3 py-3">
+                <li key={bill.id} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 py-3">
                   <div className="min-w-0">
                     <p className="truncate text-sm text-text">{bill.name}</p>
                     <p className="text-xs text-text-faint">
@@ -87,6 +100,14 @@ export default async function ContasFixasPage() {
                       )}
                       {!bill.installments.total && " · recorrente"}
                     </p>
+                    <div className="mt-1">
+                      <DueDayField
+                        billId={bill.id}
+                        dueDay={bill.dueDay}
+                        daysUntilDue={bill.daysUntilDue}
+                        onUpdate={updateFixedBillDueDayAction}
+                      />
+                    </div>
                   </div>
                   <div className="flex shrink-0 items-center gap-3">
                     <span className="font-medium text-text">{formatCurrency(bill.amount)}</span>

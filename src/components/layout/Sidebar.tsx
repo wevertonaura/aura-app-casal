@@ -26,9 +26,9 @@ export function Sidebar({ userName }: { userName: string }) {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
+                "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all",
                 active
-                  ? "bg-surface text-text border border-border-strong"
+                  ? "bg-lilac/10 text-lilac shadow-sm shadow-lilac/20"
                   : "text-text-muted hover:bg-surface hover:text-text"
               )}
             >

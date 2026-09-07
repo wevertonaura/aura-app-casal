@@ -129,13 +129,33 @@ model FixedBill {
   amount             Decimal
   category           FixedBillCategory
   totalInstallments  Int? // null = conta recorrente sem prazo (aluguel, luz, etc.)
+  // Dia do mês em que a conta vence (1-31, truncado pra meses mais curtos —
+  // ver `nextDueDate` em lib/calc.ts). Usado pra calcular quando disparar o
+  // lembrete no WhatsApp.
+  dueDay             Int               @default(5)
   startDate          DateTime          @default(now())
   createdAt          DateTime          @default(now())
 
   coupleId String
   couple   Couple @relation(fields: [coupleId], references: [id], onDelete: Cascade)
 
+  reminders FixedBillReminder[]
+
   @@index([coupleId])
+}
+
+/// Registra que já mandamos o lembrete de vencimento pra uma competência
+/// específica (mês/dia) de uma conta — evita mandar a mesma mensagem duas
+/// vezes se o cron rodar mais de uma vez no dia.
+model FixedBillReminder {
+  id      String   @id @default(cuid())
+  dueDate DateTime
+  sentAt  DateTime @default(now())
+
+  fixedBillId String
+  fixedBill   FixedBill @relation(fields: [fixedBillId], references: [id], onDelete: Cascade)
+
+  @@unique([fixedBillId, dueDate])
 }
 
 model Debt {
@@ -149,7 +169,23 @@ model Debt {
   coupleId String
   couple   Couple @relation(fields: [coupleId], references: [id], onDelete: Cascade)
 
+  payments DebtPayment[]
+
   @@index([coupleId])
+}
+
+/// Um pagamento registrado contra uma dívida específica — a soma desses
+/// valores é quanto já foi quitado (Debt.totalAmount - pago = restante).
+model DebtPayment {
+  id        String   @id @default(cuid())
+  amount    Decimal
+  date      DateTime
+  createdAt DateTime @default(now())
+
+  debtId String
+  debt   Debt   @relation(fields: [debtId], references: [id], onDelete: Cascade)
+
+  @@index([debtId])
 }
 
 model Goal {

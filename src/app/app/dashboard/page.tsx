@@ -105,8 +105,8 @@ export default async function DashboardPage() {
         <StatTile label="Gastos do mês" value={formatCurrency(snap.monthExpensesTotal)} icon={Receipt} />
         <StatTile
           label="Dívidas"
-          value={formatCurrency(snap.debtsTotal)}
-          sub={snap.debts.length ? `${formatCurrency(snap.debtsMonthlyTotal)}/mês planejado` : undefined}
+          value={formatCurrency(snap.debtsRemainingTotal)}
+          sub={snap.debts.length ? `${snap.debtsProgressPct.toFixed(0)}% quitado` : undefined}
           icon={Landmark}
         />
         <StatTile

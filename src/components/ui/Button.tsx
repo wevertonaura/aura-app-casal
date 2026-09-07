@@ -7,9 +7,9 @@ const base =
 
 const variants = {
   primary:
-    "bg-gradient-to-r from-lilac to-marsala text-white shadow-lg shadow-lilac/20 hover:brightness-110 hover:shadow-lilac/30",
+    "bg-gradient-to-r from-lilac to-marsala text-white shadow-lg shadow-lilac/30 hover:-translate-y-0.5 hover:brightness-110 hover:shadow-xl hover:shadow-lilac/40",
   secondary:
-    "bg-surface border border-border-strong text-text hover:bg-surface-hover",
+    "bg-surface border border-border-strong text-text hover:border-lilac/50 hover:bg-surface-hover",
   ghost: "text-text-muted hover:text-text hover:bg-surface",
   danger: "bg-danger/10 text-danger border border-danger/30 hover:bg-danger/20",
 };

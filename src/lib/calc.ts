@@ -70,3 +70,35 @@ export function goalMonthlySavings(
 export function sumDecimal(values: Array<number | string | { toString(): string }>): number {
   return values.reduce((acc: number, v) => acc + toNumberValue(v), 0);
 }
+
+function startOfDay(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function daysInMonth(year: number, month: number): number {
+  return new Date(year, month + 1, 0).getDate();
+}
+
+/** Dia `day` dentro do mês/ano dado — truncado pro último dia se o mês for mais curto (ex: 31 em fevereiro). */
+function clampToMonth(year: number, month: number, day: number): Date {
+  return new Date(year, month, Math.min(day, daysInMonth(year, month)));
+}
+
+/**
+ * Próxima data de vencimento (a partir de hoje) de uma conta com vencimento
+ * todo dia `dueDay` do mês. Se o dia já passou neste mês, pula pro mês
+ * seguinte.
+ */
+export function nextDueDate(dueDay: number, from = new Date()): Date {
+  const day = Math.min(Math.max(1, Math.round(dueDay)), 31);
+  const today = startOfDay(from);
+  const thisMonth = clampToMonth(today.getFullYear(), today.getMonth(), day);
+  if (thisMonth >= today) return thisMonth;
+  return clampToMonth(today.getFullYear(), today.getMonth() + 1, day);
+}
+
+/** Quantos dias faltam (pode ser 0 = hoje) até a data — sempre baseado em dias de calendário, não em horas. */
+export function daysUntil(date: Date, from = new Date()): number {
+  const ms = startOfDay(date).getTime() - startOfDay(from).getTime();
+  return Math.round(ms / (1000 * 60 * 60 * 24));
+}

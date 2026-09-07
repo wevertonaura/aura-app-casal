@@ -1,34 +1,34 @@
 @import "tailwindcss";
 
 :root {
-  /* Base — branco com leve tom de gelo */
+  /* Base — branco predominante, com um azul muito claro pra superfícies secundárias */
   --bg: #ffffff;
-  --bg-elevated: #f3f8fd;
-  --surface: #f8fbfe;
-  --surface-hover: #eaf2fa;
-  --border: rgba(15, 23, 42, 0.08);
-  --border-strong: rgba(15, 23, 42, 0.14);
+  --bg-elevated: #f6f9fd;
+  --surface: #ffffff;
+  --surface-hover: #f1f6fc;
+  --border: rgba(15, 23, 42, 0.07);
+  --border-strong: rgba(15, 23, 42, 0.12);
 
-  /* Texto */
-  --text: #0f172a;
-  --text-muted: #4b5b75;
-  --text-faint: #8a97ac;
+  /* Texto — cinza neutro para apoio, quase-preto só no texto principal */
+  --text: #10182b;
+  --text-muted: #5b6779;
+  --text-faint: #98a2b3;
 
-  /* Marca — azul cristal (mantém os nomes de variável "lilac"/"marsala" por
-     compatibilidade com as classes utilitárias já usadas em todo o app —
-     só os valores mudaram) */
-  --lilac: #0ea5e9;
-  --lilac-strong: #0284c7;
-  --marsala: #2563eb;
-  --marsala-strong: #1d4ed8;
-  --gradient-aura: linear-gradient(120deg, #38bdf8 0%, #0ea5e9 35%, #2563eb 75%, #1d4ed8 100%);
+  /* Marca — azul como elemento de identidade e destaque (mantém os nomes de
+     variável "lilac"/"marsala" por compatibilidade com as classes utilitárias
+     já usadas em todo o app — só os valores mudaram) */
+  --lilac: #2f6fed;
+  --lilac-strong: #1d4ed8;
+  --marsala: #1e46b8;
+  --marsala-strong: #17368c;
+  --gradient-aura: linear-gradient(120deg, #4c8bff 0%, #2f6fed 55%, #1d4ed8 100%);
 
-  /* Semânticas — ajustadas pra contraste em fundo claro */
+  /* Semânticas */
   --success: #16a34a;
   --warning: #b45309;
   --danger: #dc2626;
 
-  --radius: 16px;
+  --radius: 14px;
   --font-sans: var(--font-inter);
   --font-display: var(--font-sora);
 }
@@ -58,6 +58,31 @@
   border-color: var(--border);
 }
 
+/* Faixa escura — usada em seções inteiras da landing (não a página toda)
+   pra criar ritmo/contraste ao rolar, tipo o meuassessor.com. Qualquer
+   .card-glass, texto ou borda dentro dela já vira escuro sozinho, porque
+   tudo lê essas mesmas variáveis. */
+.section-dark {
+  --bg: #070b16;
+  --bg-elevated: #0d1526;
+  --surface: #0c1526;
+  --surface-hover: #16213b;
+  --border: rgba(148, 180, 255, 0.14);
+  --border-strong: rgba(148, 180, 255, 0.26);
+
+  --text: #f3f6fb;
+  --text-muted: #9aabc7;
+  --text-faint: #6b7a97;
+
+  --success: #34d399;
+  --warning: #f59e0b;
+  --danger: #f87171;
+
+  color-scheme: dark;
+  background: var(--bg);
+  color: var(--text);
+}
+
 html {
   color-scheme: light;
 }
@@ -80,29 +105,81 @@ body {
   color: transparent;
 }
 
+/* Realce discreto — usado em cards/badges sobre fundo claro */
 .glow-lilac {
-  box-shadow: 0 0 80px -20px rgba(14, 165, 233, 0.35);
+  box-shadow: 0 0 0 1px rgba(47, 111, 237, 0.14);
 }
 
+/* Brilho de verdade — pra chamar atenção em CTAs e cards de destaque,
+   principalmente dentro de .section-dark, onde ele pop mais. */
+.glow-vivid {
+  box-shadow: 0 0 50px -8px rgba(47, 111, 237, 0.45);
+}
+
+/* Card padrão do produto: sombra sutil, sem glassmorphism — mas com um
+   toque de cor no hover pra sentir mais "vivo". */
 .card-glass {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  box-shadow:
-    0 1px 2px rgba(15, 23, 42, 0.03),
-    0 8px 24px -12px rgba(37, 99, 235, 0.12);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
 }
 
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-8px); }
+.card-glass-hover:hover {
+  border-color: var(--lilac);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px -12px rgba(47, 111, 237, 0.35);
 }
-.animate-float {
-  animation: float 6s ease-in-out infinite;
+
+/* Blobs de luz azul — o principal recurso de "brilho" nas seções escuras */
+.glow-orb {
+  position: absolute;
+  z-index: -10;
+  border-radius: 9999px;
+  filter: blur(90px);
+  pointer-events: none;
+}
+
+@keyframes marquee-horizontal {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.animate-marquee-horizontal {
+  animation: marquee-horizontal 38s linear infinite;
+  will-change: transform;
+}
+.animate-marquee-horizontal-reverse {
+  animation: marquee-horizontal 38s linear infinite reverse;
+  will-change: transform;
+}
+.animate-marquee-horizontal:hover,
+.animate-marquee-horizontal-reverse:hover {
+  animation-play-state: paused;
+}
+
+@keyframes marquee-vertical {
+  from { transform: translateY(0); }
+  to { transform: translateY(-50%); }
+}
+.animate-marquee-vertical {
+  animation: marquee-vertical 20s linear infinite;
+  will-change: transform;
+}
+.animate-marquee-vertical:hover {
+  animation-play-state: paused;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.35); }
+  50% { box-shadow: 0 0 0 4px rgba(22, 163, 74, 0); }
+}
+.animate-pulse-dot {
+  animation: pulse-dot 2.2s ease-in-out infinite;
 }
 
 @keyframes fade-up {
-  from { opacity: 0; transform: translateY(16px); }
+  from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
 }
 .animate-fade-up {

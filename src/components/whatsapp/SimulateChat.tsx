@@ -10,6 +10,7 @@ const SUGGESTIONS = [
   "Aura, quanto ainda posso gastar esse mês?",
   "Aura, quero criar uma meta de R$ 2.800 para viajar em dezembro.",
   "Aura, quanto temos de dívida?",
+  "Aura, paguei R$ 200 no empréstimo pessoal.",
 ];
 
 async function submit(_prev: null, formData: FormData) {

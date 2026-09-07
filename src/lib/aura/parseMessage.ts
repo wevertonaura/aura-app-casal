@@ -13,6 +13,7 @@ export type ExpenseCategoryGuess = "alimentacao" | "transporte" | "lazer" | "com
 export type AuraIntent =
   | { type: "add_expense"; amount: number; description: string; category: ExpenseCategoryGuess }
   | { type: "add_installment_bill"; amount: number; installments: number; description: string }
+  | { type: "pay_debt"; amount: number; debtQuery: string }
   | { type: "create_goal"; amount: number; name: string; targetDate: Date | null }
   | { type: "query_leisure_budget" }
   | { type: "query_debts" }
@@ -70,6 +71,21 @@ function guessDescription(text: string): string {
     .replace(/[.!?]+$/, "")
     .trim();
   return noPrefix ? noPrefix.charAt(0).toUpperCase() + noPrefix.slice(1) : "Gasto via WhatsApp";
+}
+
+// Palavras que indicam "isso é um pagamento de dívida", não um gasto normal.
+const DEBT_PAYMENT_VERBS = /paguei|abati|abatir|quitei|amortizei/i;
+const DEBT_KEYWORDS = /d[íi]vida|cart[ãa]o|empr[ée]stimo|financiamento/i;
+
+function guessDebtQuery(text: string): string {
+  const lower = text.toLowerCase();
+  return lower
+    .replace(/^aura,?\s*/i, "")
+    .replace(/(paguei|abati|quitei|amortizei)\s*r?\$?\s*[\d.,]*\s*/i, "")
+    .replace(/^(no|na|em|do|da|de|para)\s+/i, "")
+    .replace(/^(a\s+)?d[íi]vida\s+(do|da|de)\s+/i, "")
+    .replace(/[.!?]+$/, "")
+    .trim();
 }
 
 function findTargetDate(text: string): Date | null {
@@ -133,6 +149,14 @@ export function parseAuraMessage(rawText: string): AuraIntent {
   }
   if (/quanto.*gast/i.test(lower)) {
     return { type: "query_expenses" };
+  }
+
+  // Pagamento de dívida: "paguei 200 no cartão nubank" / "abati 300 da dívida do carro"
+  if (DEBT_PAYMENT_VERBS.test(lower) && DEBT_KEYWORDS.test(lower)) {
+    const amount = findAmount(text);
+    if (amount !== null) {
+      return { type: "pay_debt", amount, debtQuery: guessDebtQuery(text) };
+    }
   }
 
   // Gasto simples: "gastei R$ 80 no mercado" / "paguei 45 no uber"

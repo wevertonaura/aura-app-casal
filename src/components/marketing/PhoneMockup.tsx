@@ -16,7 +16,7 @@ export function PhoneMockup({ children }: { children: ReactNode }) {
               <p className="text-[10px] text-text-faint">online</p>
             </div>
           </div>
-          <div className="flex min-h-[380px] flex-col gap-2 px-3 py-4">{children}</div>
+          {children}
         </div>
       </div>
     </div>

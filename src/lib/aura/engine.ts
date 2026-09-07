@@ -2,8 +2,15 @@ import { db } from "@/lib/db";
 import { getCoupleSnapshot } from "@/lib/finance";
 import { formatCurrency, formatMonthYear } from "@/lib/format";
 import { categoryLabel } from "@/lib/categories";
+import { sumDecimal } from "@/lib/calc";
 import { parseAuraMessage } from "@/lib/aura/parseMessage";
 import { whatsappClient } from "@/lib/aura/whatsapp-client";
+
+/** Remove acentos e caixa pra comparar "cartão" com "cartao" sem drama. */
+function normalizeText(s: string): string {
+  const COMBINING_DIACRITICS = new RegExp("[\\u0300-\\u036f]", "g");
+  return s.toLowerCase().normalize("NFD").replace(COMBINING_DIACRITICS, "");
+}
 
 function endOfCurrentYear(): Date {
   const now = new Date();
@@ -62,6 +69,43 @@ export async function handleAuraMessage(params: {
       relatedType = "fixedbill";
       break;
     }
+    case "pay_debt": {
+      const debts = await db.debt.findMany({ where: { coupleId }, include: { payments: true } });
+
+      if (debts.length === 0) {
+        reply = "Vocês ainda não têm nenhuma dívida cadastrada. Cadastre em Dívidas antes de mandar um pagamento.";
+        relatedType = "debt";
+        break;
+      }
+
+      const query = normalizeText(intent.debtQuery);
+      const matches = query
+        ? debts.filter((d) => {
+            const name = normalizeText(d.name);
+            return name.length > 0 && (query.includes(name) || name.includes(query));
+          })
+        : [];
+      const target = matches.length === 1 ? matches[0] : debts.length === 1 ? debts[0] : null;
+
+      if (!target) {
+        const names = debts.map((d) => `"${d.name}"`).join(", ");
+        reply = `Não consegui identificar qual dívida — vocês têm cadastrado: ${names}. Manda de novo citando o nome, tipo "paguei ${intent.amount} no ${debts[0].name}".`;
+        relatedType = "debt";
+        break;
+      }
+
+      const paidSoFar = sumDecimal(target.payments.map((p) => p.amount));
+      const remainingBefore = Math.max(0, Number(target.totalAmount) - paidSoFar);
+      await db.debtPayment.create({ data: { debtId: target.id, amount: intent.amount, date: new Date() } });
+      const remainingAfter = Math.max(0, remainingBefore - intent.amount);
+
+      reply =
+        remainingAfter <= 0
+          ? `✅ Registrei ${formatCurrency(intent.amount)} no ${target.name}. Vocês quitaram essa dívida! 🎉`
+          : `✅ Registrei ${formatCurrency(intent.amount)} no ${target.name}. Faltam ${formatCurrency(remainingAfter)} pra quitar.`;
+      relatedType = "debt";
+      break;
+    }
     case "create_goal": {
       const targetDate = intent.targetDate ?? endOfCurrentYear();
       await db.goal.create({
@@ -106,7 +150,7 @@ export async function handleAuraMessage(params: {
     }
     default:
       reply =
-        '🤔 Não entendi. Você pode dizer, por exemplo: "gastei R$ 80 no mercado", "comprei um celular em 10x de R$ 350", "quanto ainda posso gastar esse mês?" ou "quanto temos de dívida?".';
+        '🤔 Não entendi. Você pode dizer, por exemplo: "gastei R$ 80 no mercado", "comprei um celular em 10x de R$ 350", "paguei 200 no cartão", "quanto ainda posso gastar esse mês?" ou "quanto temos de dívida?".';
   }
 
   await db.whatsappMessage.create({ data: { coupleId, direction: "out", text: reply, relatedType } });
