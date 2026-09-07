@@ -2,26 +2,69 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { handleAuraMessage } from "@/lib/aura/engine";
 
+function onlyDigits(s: string): string {
+  return s.replace(/\D/g, "");
+}
+
 /**
- * Formato de webhook "genérico" — pensado para ser compatível com o shape
- * que a WhatsApp Business Cloud API (Meta) ou o Twilio mandariam: um número
- * de origem e o texto da mensagem. Hoje só é usado pelo simulador do app
- * (via Server Action), mas a rota já está pronta para receber tráfego real
- * assim que houver credenciais — troque a origem da chamada, o resto do
- * fluxo (parser + banco) não muda.
+ * Extrai remetente e texto do payload de webhook do UAZAPI (evento
+ * "messages"). O formato exato de cada wrapper (Baileys por baixo) pode
+ * variar um pouco entre versões, então checamos os caminhos mais comuns em
+ * vez de assumir um único shape — se o UAZAPI mudar algo, é só ajustar
+ * aqui, o resto do fluxo (parser + engine) não muda.
+ *
+ * Ver console do servidor (preview_logs) no primeiro teste real pra
+ * confirmar/ajustar os campos caso a extração venha vazia.
  */
+function extractIncoming(body: unknown): { from: string; text: string; fromMe: boolean } | null {
+  if (!body || typeof body !== "object") return null;
+  const b = body as Record<string, unknown>;
+
+  // Aceita tanto o payload "cru" do evento quanto {message: {...}} / {data: {...}}.
+  const msg = (b.message ?? b.data ?? b) as Record<string, unknown>;
+
+  const sender =
+    (typeof msg.sender === "string" && msg.sender) ||
+    (typeof msg.chatid === "string" && msg.chatid) ||
+    (typeof b.from === "string" && b.from) ||
+    null;
+
+  const text =
+    (typeof msg.text === "string" && msg.text) ||
+    (typeof msg.conversation === "string" && msg.conversation) ||
+    (typeof msg.content === "string" && msg.content) ||
+    (typeof b.text === "string" && b.text) ||
+    null;
+
+  if (!sender || !text) return null;
+
+  const fromMe = msg.fromMe === true || b.fromMe === true;
+  const from = onlyDigits(sender.split("@")[0]);
+
+  return { from, text, fromMe };
+}
+
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
-  const from = typeof body?.from === "string" ? body.from : null;
-  const text = typeof body?.text === "string" ? body.text : null;
 
-  if (!from || !text) {
-    return NextResponse.json({ error: "Campos 'from' e 'text' são obrigatórios." }, { status: 400 });
+  // Só nos interessa o evento de mensagem recebida — outros eventos
+  // (connection, presence, etc.) respondem 200 sem fazer nada.
+  const eventType = (body as Record<string, unknown> | null)?.EventType ?? (body as Record<string, unknown> | null)?.event;
+  if (eventType && eventType !== "messages") {
+    return NextResponse.json({ ok: true, ignored: eventType });
   }
 
-  const user = await db.user.findFirst({
-    where: { whatsappNumber: from, whatsappConnected: true },
-  });
+  const incoming = extractIncoming(body);
+  if (!incoming) {
+    return NextResponse.json({ error: "Não consegui extrair remetente/texto do payload." }, { status: 400 });
+  }
+  // Mensagens enviadas pela própria Aura (respostas) não devem virar um novo turno.
+  if (incoming.fromMe) {
+    return NextResponse.json({ ok: true, skipped: "fromMe" });
+  }
+
+  const users = await db.user.findMany({ where: { whatsappConnected: true, whatsappNumber: { not: null } } });
+  const user = users.find((u) => onlyDigits(u.whatsappNumber ?? "") === incoming.from);
 
   if (!user || !user.coupleId) {
     return NextResponse.json({ error: "Número não conectado à Aura." }, { status: 404 });
@@ -31,7 +74,7 @@ export async function POST(request: Request) {
     coupleId: user.coupleId,
     userId: user.id,
     userPhone: user.whatsappNumber,
-    text,
+    text: incoming.text,
   });
 
   return NextResponse.json({ reply });

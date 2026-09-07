@@ -1,13 +1,13 @@
 import { MessageCircle, Smartphone, Sparkles } from "lucide-react";
 import { requireCoupleUser } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { connectWhatsappAction, disconnectWhatsappAction } from "@/actions/whatsapp";
+import { disconnectWhatsappAction } from "@/actions/whatsapp";
 import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
-import { Field, Input } from "@/components/ui/Field";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { ChatBubble } from "@/components/whatsapp/ChatBubble";
 import { SimulateChat } from "@/components/whatsapp/SimulateChat";
+import { WhatsappConnectForm } from "@/components/whatsapp/WhatsappConnectForm";
 
 export default async function AuraWhatsappPage() {
   const user = await requireCoupleUser();
@@ -40,20 +40,15 @@ export default async function AuraWhatsappPage() {
             </li>
             <li className="flex gap-3">
               <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-surface-hover text-xs font-semibold text-text">2</span>
-              A Aura confirma a conexão (simulada nesta versão do MVP).
+              A Aura manda um código de verificação de 6 dígitos pra esse número.
             </li>
             <li className="flex gap-3">
               <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-surface-hover text-xs font-semibold text-text">3</span>
-              Pronto! Vocês já podem mandar mensagem pra Aura registrar tudo.
+              Confirma o código aqui e pronto — já pode mandar mensagem pra Aura registrar tudo.
             </li>
           </ol>
 
-          <form action={connectWhatsappAction} className="flex flex-col gap-3 sm:flex-row sm:items-end">
-            <Field label="Número de WhatsApp" htmlFor="phone" className="flex-1">
-              <Input id="phone" name="phone" type="tel" placeholder="+55 11 91234-5678" required />
-            </Field>
-            <Button type="submit">Conectar WhatsApp</Button>
-          </form>
+          <WhatsappConnectForm pendingNumber={user.whatsappPendingNumber} />
         </Card>
 
         <Card>

@@ -23,6 +23,11 @@ model User {
   monthlyIncome     Decimal  @default(0)
   whatsappConnected Boolean  @default(false)
   whatsappNumber    String?
+  // Verificação por código enviado via WhatsApp — evita que alguém digite o
+  // número de outra pessoa e receba as mensagens/dados financeiros dela.
+  whatsappPendingNumber String?
+  whatsappVerifyCode    String?
+  whatsappVerifyExpires DateTime?
   createdAt         DateTime @default(now())
 
   coupleId String?
