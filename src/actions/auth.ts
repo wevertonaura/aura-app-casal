@@ -23,6 +23,9 @@ const signupSchema = z.object({
   email: z.string().email("E-mail inválido."),
   password: z.string().min(6, "A senha precisa de pelo menos 6 caracteres."),
   mode: z.enum(["conjunto", "individual"]).default("conjunto"),
+  // Só usado no modo "conjunto" — se a pessoa já tem o código do
+  // parceiro(a), entra direto no mesmo casal em vez de criar um novo.
+  inviteCode: z.string().optional(),
 });
 
 export async function signupAction(_prevState: AuthState, formData: FormData): Promise<AuthState> {
@@ -31,14 +34,27 @@ export async function signupAction(_prevState: AuthState, formData: FormData): P
     email: formData.get("email"),
     password: formData.get("password"),
     mode: formData.get("mode") || "conjunto",
+    inviteCode: formData.get("inviteCode") || undefined,
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Dados inválidos." };
   }
 
-  const { name, email, password, mode } = parsed.data;
+  const { name, email, password, mode, inviteCode } = parsed.data;
   const existing = await db.user.findUnique({ where: { email } });
   if (existing) return { error: "Já existe uma conta com esse e-mail." };
+
+  // Confere o código de convite ANTES de criar a conta — se estiver
+  // errado, a pessoa corrige e tenta de novo sem ficar com uma conta
+  // "solta" (sem casal) no meio do caminho.
+  const trimmedCode = inviteCode?.trim().toUpperCase();
+  let existingCouple: { id: string } | null = null;
+  if (mode === "conjunto" && trimmedCode) {
+    existingCouple = await db.couple.findUnique({ where: { inviteCode: trimmedCode }, select: { id: true } });
+    if (!existingCouple) {
+      return { error: "Código de convite inválido. Confira com seu parceiro(a) e tente de novo." };
+    }
+  }
 
   const user = await db.user.create({
     data: { name, email, passwordHash: hashPassword(password) },
@@ -54,7 +70,19 @@ export async function signupAction(_prevState: AuthState, formData: FormData): P
     redirect("/app/dashboard");
   }
 
-  redirect("/onboarding");
+  if (existingCouple) {
+    // Segunda pessoa do casal — já entra direto, sem passar por nenhuma
+    // tela extra.
+    await db.user.update({ where: { id: user.id }, data: { coupleId: existingCouple.id } });
+    redirect("/app/dashboard");
+  }
+
+  // Primeira pessoa do casal: cria o casal na hora (sem precisar de um
+  // clique extra de "criar casal") e manda pra Configurações, onde o
+  // código de convite já aparece pronto pra compartilhar.
+  const couple = await db.couple.create({ data: { inviteCode: generateInviteCode() } });
+  await db.user.update({ where: { id: user.id }, data: { coupleId: couple.id } });
+  redirect("/app/configuracoes?bemvindo=1");
 }
 
 const loginSchema = z.object({

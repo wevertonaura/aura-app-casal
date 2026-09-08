@@ -8,7 +8,11 @@ import { Field, Input } from "@/components/ui/Field";
 import { Button } from "@/components/ui/Button";
 import { CopyButton } from "@/components/ui/CopyButton";
 
-export default async function ConfiguracoesPage() {
+export default async function ConfiguracoesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
   const user = await requireCoupleUser();
   const couple = await db.couple.findUniqueOrThrow({
     where: { id: user.coupleId! },
@@ -16,6 +20,7 @@ export default async function ConfiguracoesPage() {
   });
   const coupleIncome = couple.users.reduce((sum, u) => sum + Number(u.monthlyIncome), 0);
   const isIndividual = couple.mode === "individual";
+  const isWelcome = (await searchParams).bemvindo === "1" && !isIndividual;
 
   return (
     <div className="space-y-6">
@@ -25,6 +30,12 @@ export default async function ConfiguracoesPage() {
           {isIndividual ? "Perfil, renda e preferências." : "Perfil, renda e preferências do casal."}
         </p>
       </div>
+
+      {isWelcome && (
+        <div className="rounded-xl border border-lilac/30 bg-lilac/10 px-4 py-3 text-sm text-text">
+          🎉 Conta criada! Compartilhe o código de convite abaixo com seu parceiro(a) pra formarem o casal.
+        </div>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>

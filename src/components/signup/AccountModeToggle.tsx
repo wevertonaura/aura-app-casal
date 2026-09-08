@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Users, User } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { Field, Input } from "@/components/ui/Field";
 
 export type AccountMode = "conjunto" | "individual";
 
@@ -50,6 +51,22 @@ export function AccountModeToggle({ defaultValue = "conjunto" }: { defaultValue?
         })}
       </div>
       <p className="mt-1.5 text-xs text-text-faint">{active.desc}</p>
+
+      {mode === "conjunto" && (
+        <Field label="Código de convite (opcional)" htmlFor="inviteCode" className="mt-4">
+          <Input
+            id="inviteCode"
+            name="inviteCode"
+            type="text"
+            placeholder="Ex: 39A3C3"
+            className="uppercase tracking-widest"
+          />
+          <p className="mt-1.5 text-xs text-text-faint">
+            Já tem o código do seu parceiro(a)? Cole aqui que entram direto no mesmo casal. Se não tiver, deixe em
+            branco — a gente gera um código pra você compartilhar depois.
+          </p>
+        </Field>
+      )}
     </div>
   );
 }
