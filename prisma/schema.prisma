@@ -33,6 +33,10 @@ model User {
   whatsappPendingNumber String?
   whatsappVerifyCode    String?
   whatsappVerifyExpires DateTime?
+  // Recuperação de senha — token de uso único enviado por e-mail (Resend).
+  // Guardamos o hash, não o token em si, mesmo sendo de curta duração.
+  resetTokenHash    String?
+  resetTokenExpires DateTime?
   createdAt         DateTime @default(now())
 
   coupleId String?

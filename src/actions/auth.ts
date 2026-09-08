@@ -1,10 +1,20 @@
 "use server";
 
 import { z } from "zod";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
-import { hashPassword, verifyPassword, createSession, destroySession } from "@/lib/auth";
+import {
+  hashPassword,
+  verifyPassword,
+  createSession,
+  destroySession,
+  createPasswordResetToken,
+  getUserByValidResetToken,
+  resetPassword,
+} from "@/lib/auth";
 import { generateInviteCode } from "@/lib/inviteCode";
+import { sendPasswordResetEmail } from "@/lib/email";
 
 export type AuthState = { error?: string } | undefined;
 
@@ -74,4 +84,70 @@ export async function loginAction(_prevState: AuthState, formData: FormData): Pr
 export async function logoutAction() {
   await destroySession();
   redirect("/login");
+}
+
+/** Monta a URL base (protocolo + domínio) a partir da própria requisição — funciona em local e em produção sem precisar configurar nada. */
+async function getBaseUrl(): Promise<string> {
+  const h = await headers();
+  const host = h.get("host") ?? "localhost:3000";
+  const protocol = host.startsWith("localhost") ? "http" : "https";
+  return `${protocol}://${host}`;
+}
+
+const forgotPasswordSchema = z.object({
+  email: z.string().email("E-mail inválido."),
+});
+
+export type ForgotPasswordState = { error?: string; sent?: boolean } | undefined;
+
+export async function forgotPasswordAction(
+  _prevState: ForgotPasswordState,
+  formData: FormData,
+): Promise<ForgotPasswordState> {
+  const parsed = forgotPasswordSchema.safeParse({ email: formData.get("email") });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Dados inválidos." };
+  }
+
+  const user = await db.user.findUnique({ where: { email: parsed.data.email } });
+  // Sempre responde como se tivesse enviado, mesmo se o e-mail não existir —
+  // evita que alguém use esse formulário pra descobrir quais e-mails têm conta.
+  if (!user) return { sent: true };
+
+  const token = await createPasswordResetToken(user.id);
+  const baseUrl = await getBaseUrl();
+  const resetUrl = `${baseUrl}/redefinir-senha?token=${token}`;
+
+  const result = await sendPasswordResetEmail(user.email, resetUrl);
+  if (!result.ok) return { error: result.error };
+
+  return { sent: true };
+}
+
+const resetPasswordSchema = z.object({
+  token: z.string().min(1),
+  password: z.string().min(6, "A senha precisa de pelo menos 6 caracteres."),
+});
+
+export type ResetPasswordState = { error?: string } | undefined;
+
+export async function resetPasswordAction(
+  _prevState: ResetPasswordState,
+  formData: FormData,
+): Promise<ResetPasswordState> {
+  const parsed = resetPasswordSchema.safeParse({
+    token: formData.get("token"),
+    password: formData.get("password"),
+  });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Dados inválidos." };
+  }
+
+  const user = await getUserByValidResetToken(parsed.data.token);
+  if (!user) {
+    return { error: "Esse link expirou ou já foi usado. Peça um novo em 'Esqueci minha senha'." };
+  }
+
+  await resetPassword(user.id, parsed.data.password);
+  redirect("/login?redefinida=1");
 }

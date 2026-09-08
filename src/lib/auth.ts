@@ -44,6 +44,37 @@ export async function createSession(userId: string) {
   });
 }
 
+const RESET_TOKEN_MINUTES = 60;
+
+/** Gera um token de recuperação de senha, salva só o hash e devolve o token puro (vai no link do e-mail). */
+export async function createPasswordResetToken(userId: string): Promise<string> {
+  const token = randomBytes(32).toString("hex");
+  const resetTokenExpires = new Date(Date.now() + RESET_TOKEN_MINUTES * 60 * 1000);
+  await db.user.update({
+    where: { id: userId },
+    data: { resetTokenHash: hashToken(token), resetTokenExpires },
+  });
+  return token;
+}
+
+/** Confere o token do link contra o hash salvo e a validade — devolve o usuário, ou null se inválido/expirado. */
+export async function getUserByValidResetToken(token: string) {
+  const user = await db.user.findFirst({ where: { resetTokenHash: hashToken(token) } });
+  if (!user || !user.resetTokenExpires || user.resetTokenExpires < new Date()) return null;
+  return user;
+}
+
+/** Troca a senha, invalida o token usado e derruba todas as sessões ativas (por segurança). */
+export async function resetPassword(userId: string, newPassword: string) {
+  await db.$transaction([
+    db.user.update({
+      where: { id: userId },
+      data: { passwordHash: hashPassword(newPassword), resetTokenHash: null, resetTokenExpires: null },
+    }),
+    db.session.deleteMany({ where: { userId } }),
+  ]);
+}
+
 export async function destroySession() {
   const cookieStore = await cookies();
   const token = cookieStore.get(COOKIE_NAME)?.value;
