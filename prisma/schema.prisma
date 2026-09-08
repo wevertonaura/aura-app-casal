@@ -7,6 +7,10 @@
 
 generator client {
   provider = "prisma-client-js"
+  // "native" gera pro seu Mac (dev local); "rhel-openssl-3.0.x" é o motor
+  // que as funções serverless da Vercel (Amazon Linux) precisam. Sem isso,
+  // o build local nunca gera o binário que a produção usa.
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
