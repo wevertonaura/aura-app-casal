@@ -14,6 +14,7 @@ export type AuraIntent =
   | { type: "add_expense"; amount: number; description: string; category: ExpenseCategoryGuess }
   | { type: "add_installment_bill"; amount: number; installments: number; description: string }
   | { type: "pay_debt"; amount: number; debtQuery: string }
+  | { type: "create_debt"; totalAmount: number; monthlyPayment: number; name: string }
   | { type: "create_goal"; amount: number; name: string; targetDate: Date | null }
   | { type: "query_leisure_budget" }
   | { type: "query_debts" }
@@ -45,12 +46,23 @@ const CATEGORY_KEYWORDS: Record<ExpenseCategoryGuess, string[]> = {
   outros: [],
 };
 
+function parseAmountToken(raw: string): number {
+  const value = Number(raw.replace(/\./g, "").replace(",", "."));
+  return Number.isFinite(value) ? value : 0;
+}
+
 function findAmount(text: string): number | null {
-  const match = text.match(/r\$\s*([\d.]*\d(?:,\d{1,2})?)/i) ?? text.match(/(\d+(?:[.,]\d{1,2})?)\s*reais/i);
+  const match =
+    text.match(/r\$\s*([\d.]*\d(?:,\d{1,2})?)/i) ??
+    text.match(/(\d+(?:[.,]\d{1,2})?)\s*reais/i) ??
+    // último recurso: um número solto (ex: "paguei 1200 da minha dívida",
+    // sem "R$" nem "reais" junto) — os pontos de chamada já são
+    // suficientemente específicos (verbo + palavra-chave) pra isso não
+    // pegar número errado com frequência.
+    text.match(/\b(\d+(?:[.,]\d{1,2})?)\b/);
   if (!match) return null;
-  const raw = match[1].replace(/\./g, "").replace(",", ".");
-  const value = Number(raw);
-  return Number.isFinite(value) ? value : null;
+  const value = parseAmountToken(match[1]);
+  return value > 0 ? value : null;
 }
 
 function guessCategory(text: string): ExpenseCategoryGuess {
@@ -65,8 +77,14 @@ function guessDescription(text: string): string {
   const lower = text.toLowerCase();
   const noPrefix = lower
     .replace(/^aura,?\s*/i, "")
-    .replace(/(gastei|paguei)\s*r?\$?\s*[\d.,]*\s*/i, "")
+    .replace(/(gastei|paguei)\s*/i, "")
     .replace(/comprei\s*/i, "")
+    // valor em qualquer formato ("R$ 80", "80 reais" ou só "80") — cobre
+    // tanto "gastei 80 reais no mercado" quanto "80 reais no mercado" sem
+    // verbo nenhum.
+    .replace(/r\$\s*[\d.,]+\s*/i, "")
+    .replace(/\d+(?:[.,]\d{1,2})?\s*reais\s*/i, "")
+    .replace(/\d+(?:[.,]\d{1,2})?\s*/, "")
     .replace(/^(no|na|em|do|da|de)\s+/i, "")
     .replace(/[.!?]+$/, "")
     .trim();
@@ -151,6 +169,28 @@ export function parseAuraMessage(rawText: string): AuraIntent {
     return { type: "query_expenses" };
   }
 
+  // Nova dívida: "coloca 1000 reais, vou pagar 100 por mês" / "tenho uma
+  // dívida de 3000, pago 500 por mês" — dois valores na frase, o segundo
+  // com "por mês" junto. Verbo de pagamento (paguei/abati/...) tem
+  // prioridade e é checado depois, então uma frase no passado não cai aqui.
+  const monthlyMatch = lower.match(/(?:pagar|pago|pagando)\s*(?:r\$\s*)?(\d+(?:[.,]\d{1,2})?)\s*(?:reais\s*)?\s*(?:por\s*m[êe]s|\/\s*m[êe]s|mensa(?:is|l))/i);
+  if (monthlyMatch && !DEBT_PAYMENT_VERBS.test(lower)) {
+    const monthlyPayment = parseAmountToken(monthlyMatch[1]);
+    const totalAmount = findAmount(text.slice(0, monthlyMatch.index));
+    if (totalAmount !== null && monthlyPayment > 0 && totalAmount !== monthlyPayment) {
+      // Só pega o nome se vier antes de qualquer número — evita capturar o
+      // valor junto (ex: "dívida de cartão de 1000 reais" → só "cartão").
+      const nameMatch = lower.match(/d[íi]vida\s+(?:do|da|de)\s+([a-zà-ú\s]+?)(?:\s*\d|,|\.|$)/i);
+      const name = nameMatch ? nameMatch[1].trim().replace(/\s+(de|do|da)$/i, "") : "Dívida via WhatsApp";
+      return {
+        type: "create_debt",
+        totalAmount,
+        monthlyPayment,
+        name: name.charAt(0).toUpperCase() + name.slice(1),
+      };
+    }
+  }
+
   // Pagamento de dívida: "paguei 200 no cartão nubank" / "abati 300 da dívida do carro"
   if (DEBT_PAYMENT_VERBS.test(lower) && DEBT_KEYWORDS.test(lower)) {
     const amount = findAmount(text);
@@ -170,6 +210,19 @@ export function parseAuraMessage(rawText: string): AuraIntent {
         category: guessCategory(text),
       };
     }
+  }
+
+  // Último recurso: só "valor + lugar", sem verbo nenhum (ex: "80 reais no
+  // mercado"). Só entra aqui se nada acima bateu — ou seja, não é consulta,
+  // não é dívida, não é meta — então um valor solto quase sempre é um gasto.
+  const bareAmount = findAmount(text);
+  if (bareAmount !== null) {
+    return {
+      type: "add_expense",
+      amount: bareAmount,
+      description: guessDescription(text),
+      category: guessCategory(text),
+    };
   }
 
   return { type: "unknown", raw: text };

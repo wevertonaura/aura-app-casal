@@ -106,6 +106,19 @@ export async function handleAuraMessage(params: {
       relatedType = "debt";
       break;
     }
+    case "create_debt": {
+      await db.debt.create({
+        data: {
+          coupleId,
+          name: intent.name,
+          totalAmount: intent.totalAmount,
+          monthlyPayment: intent.monthlyPayment,
+        },
+      });
+      reply = `✅ Dívida registrada: ${intent.name} — ${formatCurrency(intent.totalAmount)}, pagando ${formatCurrency(intent.monthlyPayment)}/mês. Já está em Dívidas.`;
+      relatedType = "debt";
+      break;
+    }
     case "create_goal": {
       const targetDate = intent.targetDate ?? endOfCurrentYear();
       await db.goal.create({
@@ -150,7 +163,7 @@ export async function handleAuraMessage(params: {
     }
     default:
       reply =
-        '🤔 Não entendi. Você pode dizer, por exemplo: "gastei R$ 80 no mercado", "comprei um celular em 10x de R$ 350", "paguei 200 no cartão", "quanto ainda posso gastar esse mês?" ou "quanto temos de dívida?".';
+        '🤔 Não entendi. Você pode dizer, por exemplo: "80 no mercado", "comprei um celular em 10x de R$ 350", "paguei 200 no cartão", "tenho uma dívida de 3000, pago 500 por mês", "quanto ainda posso gastar esse mês?" ou "quanto temos de dívida?".';
   }
 
   await db.whatsappMessage.create({ data: { coupleId, direction: "out", text: reply, relatedType } });
