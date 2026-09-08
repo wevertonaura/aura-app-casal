@@ -1,10 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { handleAuraMessage } from "@/lib/aura/engine";
-
-function onlyDigits(s: string): string {
-  return s.replace(/\D/g, "");
-}
+import { normalizePhoneBR } from "@/lib/phone";
 
 /**
  * Extrai remetente e texto do payload de webhook do UAZAPI (evento
@@ -23,9 +20,13 @@ function extractIncoming(body: unknown): { from: string; text: string; fromMe: b
   // Aceita tanto o payload "cru" do evento quanto {message: {...}} / {data: {...}}.
   const msg = (b.message ?? b.data ?? b) as Record<string, unknown>;
 
+  // Em chats diretos, "sender" às vezes vem como @lid (identificador de
+  // privacidade do WhatsApp, não o número) — "sender_pn" e "chatid" são o
+  // número de telefone de verdade, então têm prioridade.
   const sender =
-    (typeof msg.sender === "string" && msg.sender) ||
+    (typeof msg.sender_pn === "string" && msg.sender_pn) ||
     (typeof msg.chatid === "string" && msg.chatid) ||
+    (typeof msg.sender === "string" && msg.sender) ||
     (typeof b.from === "string" && b.from) ||
     null;
 
@@ -39,7 +40,7 @@ function extractIncoming(body: unknown): { from: string; text: string; fromMe: b
   if (!sender || !text) return null;
 
   const fromMe = msg.fromMe === true || b.fromMe === true;
-  const from = onlyDigits(sender.split("@")[0]);
+  const from = normalizePhoneBR(sender.split("@")[0]);
 
   return { from, text, fromMe };
 }
@@ -64,7 +65,7 @@ export async function POST(request: Request) {
   }
 
   const users = await db.user.findMany({ where: { whatsappConnected: true, whatsappNumber: { not: null } } });
-  const user = users.find((u) => onlyDigits(u.whatsappNumber ?? "") === incoming.from);
+  const user = users.find((u) => normalizePhoneBR(u.whatsappNumber ?? "") === incoming.from);
 
   if (!user || !user.coupleId) {
     return NextResponse.json({ error: "Número não conectado à Aura." }, { status: 404 });
