@@ -1,17 +1,18 @@
 // Schema do AURA — MVP de gestão financeira para casais.
 //
-// Datasource: em desenvolvimento local usamos SQLite (zero setup) via
-// DATABASE_URL="file:./dev.db". Para produção, troque `provider` para
-// "postgresql" e aponte DATABASE_URL para o Postgres real (Neon, Supabase,
-// RDS, etc.) — o schema abaixo não usa nenhum recurso exclusivo de SQLite.
+// Datasource: Postgres (Supabase). DATABASE_URL usa o pooler (transaction
+// mode, porta 6543) — é o que a aplicação usa em runtime, inclusive em
+// serverless (Vercel). DIRECT_URL usa a conexão direta (porta 5432) — só o
+// Prisma Migrate usa essa, pooler não suporta as operações de migração.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
