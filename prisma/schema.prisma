@@ -174,7 +174,8 @@ model Debt {
   coupleId String
   couple   Couple @relation(fields: [coupleId], references: [id], onDelete: Cascade)
 
-  payments DebtPayment[]
+  payments         DebtPayment[]
+  overdueReminders DebtOverdueReminder[]
 
   @@index([coupleId])
 }
@@ -191,6 +192,20 @@ model DebtPayment {
   debt   Debt   @relation(fields: [debtId], references: [id], onDelete: Cascade)
 
   @@index([debtId])
+}
+
+/// Registra que já cobramos uma dívida sem pagamento no mês (monthKey tipo
+/// "2026-09") — evita mandar o mesmo aviso de atraso mais de uma vez no
+/// mesmo mês, mesmo que o cron rode várias vezes.
+model DebtOverdueReminder {
+  id       String   @id @default(cuid())
+  monthKey String
+  sentAt   DateTime @default(now())
+
+  debtId String
+  debt   Debt   @relation(fields: [debtId], references: [id], onDelete: Cascade)
+
+  @@unique([debtId, monthKey])
 }
 
 model Goal {

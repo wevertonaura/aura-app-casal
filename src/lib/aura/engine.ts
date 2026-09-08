@@ -52,6 +52,17 @@ export async function handleAuraMessage(params: {
       });
       reply = `✅ Registrei ${formatCurrency(intent.amount)} em ${categoryLabel(intent.category)} (${intent.description}).`;
       relatedType = "expense";
+
+      // Alertas proativos — a Aura avisa sozinha, na hora, se esse gasto
+      // estourou o orçamento de lazer ou deixou o saldo do mês negativo.
+      // Não usa nenhuma API paga, só os números que já calculamos sempre.
+      const snapAfter = await getCoupleSnapshot(coupleId);
+      if (snapAfter.leisureBudget > 0 && snapAfter.leisureSpent > snapAfter.leisureBudget) {
+        reply += `\n\n⚠️ Orçamento de lazer estourou em ${formatCurrency(snapAfter.leisureSpent - snapAfter.leisureBudget)} este mês.`;
+      }
+      if (snapAfter.available < 0) {
+        reply += `\n\n🔴 Atenção: o saldo do mês ficou negativo em ${formatCurrency(Math.abs(snapAfter.available))}.`;
+      }
       break;
     }
     case "add_installment_bill": {
